@@ -1,0 +1,6 @@
+httpx==0.28.*
+PyJWT[crypto]==2.*
+fastapi==0.143.*
+uvicorn[standard]==0.54.*
+psycopg[binary]==3.3.*
+pydantic==2.*

@@ -1,0 +1,68 @@
+# Patrimoine : toute l'application. Démarrage : ./scripts/setup.sh && docker compose up -d --build
+# Tous les ports sont liés à 127.0.0.1 : placez un reverse proxy (avec authentification) devant pour l'exposer.
+services:
+  postgres:
+    image: postgres:16
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    ports: ["127.0.0.1:5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+  ledger:
+    build: { context: ., dockerfile: services/ledger/Dockerfile }
+    env_file: .env
+    depends_on: { postgres: { condition: service_healthy } }
+    ports: ["127.0.0.1:8000:8000"]
+  budget-engine:
+    build: services/budget-engine
+    env_file: .env
+    depends_on: { postgres: { condition: service_healthy } }
+  reporting:
+    build: services/reporting
+    env_file: .env
+    depends_on: [ledger, budget-engine]
+  allocation-engine:
+    build: services/allocation-engine
+    env_file: .env
+    depends_on: [ledger, budget-engine]
+  ingestion-market:
+    build: services/ingestion-market
+    env_file: .env
+    depends_on: [postgres]
+    profiles: [jobs]
+  advisor:
+    build: services/advisor
+    env_file: .env
+    depends_on: [ledger, budget-engine, reporting]
+  ingestion-bank:
+    build: services/ingestion-bank
+    env_file: .env
+    depends_on: [ledger]
+    volumes:
+      - ./secrets:/secrets
+    profiles: [jobs]
+  bank-api:   # écran « Banques » (ajout / renouvellement) ; retour : APP_URL/api/bank/callback
+    build: services/ingestion-bank
+    command: ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    env_file: .env
+    depends_on: [ledger]
+    volumes:
+      - ./secrets:/secrets:ro
+  web:
+    build: services/web
+    depends_on: [ledger, budget-engine, reporting, advisor, allocation-engine, bank-api]
+    ports: ["127.0.0.1:8080:80"]
+  grafana:
+    image: grafana/grafana:11.2.0
+    env_file: .env
+    ports: ["127.0.0.1:3000:3000"]
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana:/var/lib/grafana
+volumes:
+  pgdata:
+  grafana:

@@ -1,0 +1,7 @@
+[Unit]
+Description=Patrimoine - digest mensuel par email
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/patrimoine
+ExecStart=/bin/bash -c 'docker compose exec -T reporting python -m app.main --send >> %h/patrimoine/logs/digest.log 2>&1'

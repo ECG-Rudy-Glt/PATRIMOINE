@@ -1,0 +1,6 @@
+[Unit]
+Description=Patrimoine - synchronisation bancaire quotidienne
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '%h/patrimoine/scripts/sync.sh >> %h/patrimoine/logs/sync.log 2>&1'

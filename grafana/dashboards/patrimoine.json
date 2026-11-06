@@ -1,0 +1,349 @@
+{
+ "uid": "patrimoine-total",
+ "title": "Patrimoine total",
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-90d",
+  "to": "now"
+ },
+ "refresh": "1h",
+ "panels": [
+  {
+   "type": "stat",
+   "title": "Patrimoine total",
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT day::timestamp AS time, total FROM networth_daily ORDER BY day",
+     "format": "time_series",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyEUR",
+     "decimals": 2
+    }
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "graphMode": "area"
+   },
+   "id": 1,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Comptes non rafraîchis (> 48 h)",
+   "gridPos": {
+    "x": 6,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT count(*) AS stale FROM stale_accounts",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    }
+   },
+   "options": {
+    "colorMode": "background",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    }
+   },
+   "id": 2,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Solde net 30 derniers jours",
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 6,
+    "h": 5
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT COALESCE(sum(amount),0) AS net FROM transactions WHERE booked_on > current_date - 30",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyEUR",
+     "decimals": 2,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 0
+       }
+      ]
+     }
+    }
+   },
+   "options": {
+    "colorMode": "value",
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    }
+   },
+   "id": 3,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Évolution du patrimoine",
+   "gridPos": {
+    "x": 0,
+    "y": 5,
+    "w": 24,
+    "h": 8
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT v.day::timestamp AS time, a.name || ' (' || a.institution || ')' AS metric, v.balance AS value FROM valuations v JOIN accounts a ON a.id=v.account_id WHERE $__timeFilter(v.day::timestamp) ORDER BY 1",
+     "format": "time_series",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyEUR",
+     "decimals": 2,
+     "custom": {
+      "stacking": {
+       "mode": "normal"
+      },
+      "fillOpacity": 30
+     }
+    }
+   },
+   "id": 4,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  },
+  {
+   "type": "barchart",
+   "title": "Entrées / sorties par mois",
+   "gridPos": {
+    "x": 0,
+    "y": 13,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT to_char(date_trunc('month',booked_on),'YYYY-MM') AS mois, sum(amount) FILTER (WHERE amount>0) AS entrees, -sum(amount) FILTER (WHERE amount<0) AS sorties FROM transactions GROUP BY 1 ORDER BY 1",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "currencyEUR",
+     "decimals": 2
+    }
+   },
+   "id": 5,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  },
+  {
+   "type": "table",
+   "title": "Comptes",
+   "gridPos": {
+    "x": 12,
+    "y": 13,
+    "w": 12,
+    "h": 8
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT a.institution AS banque, a.name AS compte, a.type, v.balance AS solde, a.last_sync_at AS derniere_synchro FROM accounts a LEFT JOIN LATERAL (SELECT balance FROM valuations WHERE account_id=a.id ORDER BY day DESC LIMIT 1) v ON true ORDER BY solde DESC NULLS LAST",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "solde"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyEUR"
+       }
+      ]
+     }
+    ]
+   },
+   "id": 6,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  },
+  {
+   "type": "table",
+   "title": "Dernières transactions",
+   "gridPos": {
+    "x": 0,
+    "y": 21,
+    "w": 24,
+    "h": 10
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "patrimoine-pg"
+     },
+     "rawSql": "SELECT booked_on AS date, label AS libelle, amount AS montant, a.name AS compte FROM transactions t JOIN accounts a ON a.id=t.account_id ORDER BY booked_on DESC, t.id DESC LIMIT 100",
+     "format": "table",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "montant"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "currencyEUR"
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "green",
+           "value": 0
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "id": 7,
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "patrimoine-pg"
+   }
+  }
+ ]
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Patrimoine - synchro bancaire 06:30 et 18:30 (quota DSP2 : 4/jour)
+
+[Timer]
+OnCalendar=*-*-* 06:30:00
+OnCalendar=*-*-* 18:30:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

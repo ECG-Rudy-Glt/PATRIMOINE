@@ -1,0 +1,6 @@
+apiVersion: 1
+providers:
+  - name: patrimoine
+    folder: Patrimoine
+    type: file
+    options: { path: /var/lib/grafana/dashboards }

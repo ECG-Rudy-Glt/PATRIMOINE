@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+secrets/*
+!secrets/.gitkeep
+node_modules/
+dist/
+*.tsbuildinfo
+logs/
