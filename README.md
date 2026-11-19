@@ -72,6 +72,7 @@ git clone https://github.com/ECG-Rudy-Glt/PATRIMOINE.git && cd PATRIMOINE
 
 Ouvrez <http://localhost:8080>. L'application démarre avec deux personnes d'exemple, *Alex* et *Sam* (à renommer), et des données de référence génériques.
 
+- Premiers pas après l'installation (vos données, IA, banques, sauvegarde) : [docs/demarrage.md](docs/demarrage.md) ([English](docs/getting-started.md))
 - Guide pas à pas (première connexion, mise à jour, sauvegarde, dépannage) : [docs/installation.md](docs/installation.md) ([English](docs/installation.en.md))
 - Application de bureau Windows et Linux : [docs/application-bureau.md](docs/application-bureau.md)
 - Configuration complète (banques, planification, reverse proxy) : [docs/deploiement.md](docs/deploiement.md)
@@ -97,6 +98,7 @@ Détail des services, du schéma et des principes : [docs/architecture.md](docs/
 
 - [Architecture](docs/architecture.md)
 - [Installation pas à pas](docs/installation.md) ([English](docs/installation.en.md))
+- [Premiers pas](docs/demarrage.md) ([English](docs/getting-started.md))
 - [Application de bureau](docs/application-bureau.md)
 - [Déploiement](docs/deploiement.md) : installation, banques, planification, reverse proxy, sauvegardes
 - [Workflow de développement](docs/workflow.md) : environnement, tests, migrations, CI

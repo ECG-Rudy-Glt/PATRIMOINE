@@ -35,6 +35,8 @@ The first build takes a few minutes. The interface and the AI advisor prompts ar
 
 ## First sign-in
 
+Next: [getting started](getting-started.md) (your people and accounts, AI advisor, banks, backup).
+
 1. Open <http://localhost:8080>.
 2. The app starts with two sample people, *Alex* and *Sam*. Rename them in SQL: `docker compose exec postgres psql -U patrimoine -c "UPDATE persons SET name = 'Your name' WHERE id = 1;"`.
 3. Add your accounts: import a statement (CSV or OFX) from the **Export** screen ("Importer un historique"), or connect your banks (**Banques** screen, see [deployment](deploiement.md), in French).

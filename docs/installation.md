@@ -35,6 +35,8 @@ La première construction prend quelques minutes.
 
 ## Première connexion
 
+Ensuite : [premiers pas](demarrage.md) (vos personnes et comptes, conseiller IA, banques, sauvegarde).
+
 1. Ouvrez <http://localhost:8080>.
 2. L'application démarre avec deux personnes d'exemple, *Alex* et *Sam*. Renommez-les en SQL : `docker compose exec postgres psql -U patrimoine -c "UPDATE persons SET name = 'Votre prénom' WHERE id = 1;"`.
 3. Ajoutez vos comptes : importez un relevé (CSV ou OFX) depuis l'écran **Export** (« Importer un historique »), ou connectez vos banques (écran **Banques**, voir [déploiement](deploiement.md#connecter-ses-banques-enable-banking)).
