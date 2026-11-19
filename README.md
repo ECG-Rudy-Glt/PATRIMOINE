@@ -1,14 +1,35 @@
 # Patrimoine
 
-**Suivez tout votre patrimoine, chez vous.** Application auto-hébergée qui regroupe les comptes, placements et budget d'un foyer, avec des chiffres fiables et un conseiller IA qui cite ses sources.
+**Tout votre patrimoine, chez vous, dans une seule interface.** Comptes, épargne, placements, budget et objectifs d'un foyer, avec des chiffres calculés (jamais inventés) et un conseiller IA qui cite ses sources. Auto-hébergé, sans compte à créer chez un tiers.
 
-> *English:* Patrimoine is a self-hosted wealth tracker. It aggregates a household's accounts through Enable Banking, handles budget, goals and allocation, and sends AI-generated advice by email. The LLM never makes up a number: figures come from deterministic services and every recommendation must cite verified facts. Work in progress, Apache-2.0.
+> *English:* Patrimoine is a self-hosted wealth tracker for a household: accounts (via Enable Banking), budget, goals, allocation and an AI advisor that never makes up a number. Install in two commands: see [docs/installation.en.md](docs/installation.en.md). Apache-2.0.
 
 [![CI](https://github.com/ECG-Rudy-Glt/PATRIMOINE/actions/workflows/ci.yml/badge.svg)](https://github.com/ECG-Rudy-Glt/PATRIMOINE/actions/workflows/ci.yml)
 ![Licence](https://img.shields.io/badge/licence-Apache%202.0-blue)
 ![Statut](https://img.shields.io/badge/statut-en%20construction-orange)
 
 **[Site](https://patrimoine-open.gault-rudy.com)** · **[Démo interactive](https://patrimoine-demo.gault-rudy.com)** (données fictives, visite guidée)
+
+<p align="center">
+  <img src="docs/images/accueil-bureau-light.webp" alt="Accueil de Patrimoine, thème Perle clair" width="49%">
+  <img src="docs/images/accueil-bureau-dark.webp" alt="Accueil de Patrimoine, thème sombre" width="49%">
+</p>
+
+<p align="center">
+  <img src="docs/images/accueil-mobile-light.webp" alt="Accueil sur mobile, clair" width="23%">
+  <img src="docs/images/accueil-mobile-dark.webp" alt="Accueil sur mobile, sombre" width="23%">
+  <img src="docs/images/objectifs-mobile-light.webp" alt="Objectifs sur mobile, clair" width="23%">
+  <img src="docs/images/objectifs-mobile-dark.webp" alt="Objectifs sur mobile, sombre" width="23%">
+</p>
+
+<sub>Captures réalisées avec des données fictives (Alex et Sam). Interface « Perle », clair, sombre ou automatique, adaptée au mobile.</sub>
+
+## Aperçu
+
+<p align="center">
+  <img src="docs/images/budget-bureau-light.webp" alt="Budget par cycle de paie, clair" width="49%">
+  <img src="docs/images/conseils-bureau-dark.webp" alt="Conseils de l'IA avec sources, sombre" width="49%">
+</p>
 
 ## Le but du projet
 
@@ -40,18 +61,20 @@ Principe directeur : **le LLM n'invente aucun chiffre**. Les calculs sont faits 
 
 ## Démarrage rapide
 
-Prérequis : Docker et Docker Compose.
+Prérequis : [Docker](https://docs.docker.com/get-docker/) avec Docker Compose.
 
 ```bash
-git clone https://github.com/ECG-Rudy-Glt/PATRIMOINE.git
-cd PATRIMOINE
-./scripts/setup.sh                # crée .env avec des mots de passe aléatoires
-docker compose up -d --build
+git clone https://github.com/ECG-Rudy-Glt/PATRIMOINE.git && cd PATRIMOINE
+./scripts/setup.sh && docker compose up -d --build
 ```
+
+`setup.sh` est un assistant : il génère les mots de passe et pose quelques questions facultatives (conseiller IA, e-mail, notifications, banques). Sous Windows : `powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1`.
 
 Ouvrez <http://localhost:8080>. L'application démarre avec deux personnes d'exemple, *Alex* et *Sam* (à renommer), et des données de référence génériques.
 
-Pour la configuration complète (banques, conseiller IA, e-mail, notifications), voir [docs/deploiement.md](docs/deploiement.md).
+- Guide pas à pas (première connexion, mise à jour, sauvegarde, dépannage) : [docs/installation.md](docs/installation.md) ([English](docs/installation.en.md))
+- Application de bureau Windows, macOS et Linux : [docs/application-bureau.md](docs/application-bureau.md)
+- Configuration complète (banques, planification, reverse proxy) : [docs/deploiement.md](docs/deploiement.md)
 
 ## Architecture
 
@@ -73,6 +96,8 @@ Détail des services, du schéma et des principes : [docs/architecture.md](docs/
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Installation pas à pas](docs/installation.md) ([English](docs/installation.en.md))
+- [Application de bureau](docs/application-bureau.md)
 - [Déploiement](docs/deploiement.md) : installation, banques, planification, reverse proxy, sauvegardes
 - [Workflow de développement](docs/workflow.md) : environnement, tests, migrations, CI
 - [Sécurité](SECURITY.md)

@@ -2,3 +2,7 @@ Patrimoine
 Copyright 2026 Rudy Gault
 
 Ce produit est publié sous licence Apache 2.0 (voir LICENSE).
+
+Composants tiers distribués avec ce dépôt (licences respectives) : React, Recharts, Vite (interface web) ;
+Tauri et ses dépendances Rust (application de bureau, desktop/). Les dépendances exactes figurent dans
+services/web/package-lock.json et desktop/package-lock.json.

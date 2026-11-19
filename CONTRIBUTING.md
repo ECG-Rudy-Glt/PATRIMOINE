@@ -39,3 +39,7 @@ Ouvrez ensuite une *pull request* vers `main`. La CI doit passer.
 ## Licence
 
 En contribuant, vous acceptez que votre contribution soit publiée sous licence Apache 2.0.
+
+## Application de bureau
+
+La coque Tauri est dans `desktop/` (voir [desktop/README.md](desktop/README.md)). Elle ne contient aucune adresse de serveur : ne codez jamais d'URL privée. Les captures du README sont faites avec des données fictives (Alex et Sam) ; gardez ce principe pour toute nouvelle image dans `docs/images/`.
