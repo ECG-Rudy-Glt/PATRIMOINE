@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Page locale de choix du serveur uniquement. Le contenu distant (votre serveur Patrimoine) n'a aucun accès aux API natives.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

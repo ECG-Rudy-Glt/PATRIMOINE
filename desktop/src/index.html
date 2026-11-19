@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Patrimoine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card" aria-labelledby="titre">
+    <img class="logo" src="icon.png" width="72" height="72" alt="">
+    <h1 id="titre" data-i18n="title">Connexion à votre serveur</h1>
+    <p class="lead" data-i18n="lead">Saisissez l'adresse de votre serveur Patrimoine. Elle est mémorisée sur cet ordinateur.</p>
+
+    <form id="form" novalidate>
+      <label for="url" data-i18n="label">Adresse du serveur</label>
+      <input id="url" name="url" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false"
+             placeholder="https://patrimoine.example.org" aria-describedby="msg" autofocus>
+      <p id="msg" class="msg" role="status" aria-live="polite"></p>
+      <div class="row">
+        <button type="submit" id="go" data-i18n="connect">Se connecter</button>
+      </div>
+    </form>
+
+    <p class="hint" data-i18n="hint">https est requis, sauf pour un serveur du réseau local (localhost, 192.168.x.x, 10.x.x.x, nom en .local).</p>
+    <p class="lang"><button type="button" class="link" id="lang">English</button></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+name: Application de bureau
+
+# Construit l'application de bureau (desktop/) : Windows (msi + exe NSIS), macOS (dmg), Linux (AppImage + deb).
+# Déclenchement : tag `desktop-v*` (publie une Release GitHub avec les sommes SHA-256) ou lancement manuel
+# (construit les installateurs et les garde en artefacts ; case « publier » pour créer la Release).
+# Sans signature par défaut. Signature optionnelle si les secrets sont définis : voir desktop/README.md.
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publier une Release GitHub (sinon artefacts seulement)"
+        type: boolean
+        default: false
+      tag:
+        description: "Tag de la Release si publication manuelle (ex. desktop-v0.1.0)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Windows, os: windows-2022, bundles: "msi,nsis", target: "" }
+          - { name: macOS (Apple Silicon), os: macos-14, bundles: "dmg", target: "aarch64-apple-darwin" }
+          - { name: macOS (Intel), os: macos-14, bundles: "dmg", target: "x86_64-apple-darwin" }
+          - { name: Linux, os: ubuntu-22.04, bundles: "appimage,deb", target: "" }
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Dépendances système (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - uses: actions/setup-node@v4.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2.7.7
+        with:
+          workspaces: desktop/src-tauri
+          key: ${{ matrix.target }}
+
+      - name: Installer la CLI Tauri
+        working-directory: desktop
+        run: npm ci
+
+      # Signature Windows (optionnelle) : certificat .pfx encodé en base64 dans le secret WINDOWS_CERTIFICATE.
+      - name: Préparer la signature Windows (si le certificat est fourni)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if ($env:WINDOWS_CERTIFICATE) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'cert.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+            $pwd = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+            $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $pwd
+            Remove-Item $pfx
+            $conf = @{ bundle = @{ windows = @{ certificateThumbprint = $cert.Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = 'http://timestamp.digicert.com' } } } | ConvertTo-Json -Depth 5
+            Set-Content -Path (Join-Path $env:RUNNER_TEMP 'sign.json') -Value $conf
+            "Signature Windows activée."
+          } else { "Pas de certificat Windows : installateur non signé." }
+
+      - name: Construire
+        working-directory: desktop
+        shell: bash
+        env:
+          # Signature macOS (optionnelle) : variables lues par Tauri si elles sont définies et non vides.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            [ -z "${!v}" ] && unset "$v"
+          done
+          args=(--bundles "${{ matrix.bundles }}")
+          [ -n "${{ matrix.target }}" ] && args+=(--target "${{ matrix.target }}")
+          if [ "$RUNNER_OS" = "Windows" ] && [ -f "$RUNNER_TEMP/sign.json" ]; then args+=(--config "$RUNNER_TEMP/sign.json"); fi
+          npx tauri build "${args[@]}"
+
+      - name: Rassembler les installateurs
+        shell: bash
+        run: |
+          mkdir -p dist-out
+          find desktop/src-tauri/target -path '*/release/bundle/*' -type f \
+            \( -name '*.msi' -o -name '*-setup.exe' -o -name '*.dmg' -o -name '*.AppImage' -o -name '*.deb' \) \
+            -exec cp {} dist-out/ \;
+          # Les deux builds macOS produisent des noms distincts (aarch64 / x64) ; on vérifie qu'il y a quelque chose.
+          ls -l dist-out
+          [ -n "$(ls -A dist-out)" ]
+
+      - uses: actions/upload-artifact@v4.4.3
+        with:
+          name: installateurs-${{ runner.os }}-${{ matrix.target || 'defaut' }}
+          path: dist-out/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publier la Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/desktop-v') || (github.event_name == 'workflow_dispatch' && inputs.publish)
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4.1.8
+        with:
+          path: assets
+          pattern: installateurs-*
+          merge-multiple: true
+
+      - name: Sommes SHA-256
+        working-directory: assets
+        run: |
+          ls -l
+          sha256sum -- * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Créer la Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+        run: |
+          [ -n "$TAG" ] || { echo "Aucun tag : renseignez « tag » pour une publication manuelle."; exit 1; }
+          case "$TAG" in desktop-v*) ;; *) echo "Le tag doit commencer par desktop-v"; exit 1 ;; esac
+          notes="Application de bureau Patrimoine ($TAG). Installateurs non signés par défaut : voir docs/application-bureau.md (avertissement SmartScreen / Gatekeeper et vérification des sommes SHA-256 avec SHA256SUMS.txt)."
+          gh release create "$TAG" assets/* --repo "$GITHUB_REPOSITORY" --title "Application de bureau $TAG" --notes "$notes" --target "$GITHUB_SHA" \
+            || gh release upload "$TAG" assets/* --repo "$GITHUB_REPOSITORY" --clobber

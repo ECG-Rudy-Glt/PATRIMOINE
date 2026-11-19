@@ -1,0 +1,15 @@
+{
+  "name": "patrimoine-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Coque de bureau Tauri pour Patrimoine",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon icon-source.png"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.0"
+  }
+}
