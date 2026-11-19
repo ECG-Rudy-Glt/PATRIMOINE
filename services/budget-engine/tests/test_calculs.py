@@ -18,7 +18,7 @@ class MarchandTest(unittest.TestCase):
         self.assertEqual(be.merchant_key("PRLV SEPA SPOTIFY 12345678"), "SPOTIFY")
 
     def test_contrepartie(self):
-        self.assertEqual(be.counterpart("VIR INST GAULT ALEX N2"), "GAULT ALEX N2")
+        self.assertEqual(be.counterpart("VIR INST MARTIN ALEX N2"), "MARTIN ALEX N2")
         self.assertEqual(be.counterpart(None), "COMPTE NON SUIVI")
 
 

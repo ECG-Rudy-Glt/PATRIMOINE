@@ -1,7 +1,7 @@
 """API « Banques » : ajout / renouvellement d'une banque Enable Banking depuis l'interface, et synchro.
 
 Tourne dans le seul pod qui monte le volume patrimoine-bank (clé privée, RWO) ; le CronJob bank-sync
-appelle POST /internal/sync. Exposée par le proxy web sous /api/bank/* (derrière Authentik) ; /internal/*
+appelle POST /internal/sync. Exposée par le proxy web sous /api/bank/* (derrière le reverse proxy d'authentification) ; /internal/*
 n'est pas proxifié. Pas de journal d'accès uvicorn (--no-access-log) : l'URL de retour porte le code.
 """
 import logging

@@ -237,7 +237,7 @@ _PREFIX = re.compile(r"^(VIREMENT|VIR|PRLV|TRANSFERT)( INST| SEPA)?( DE | A | VE
 
 def counterpart(label: str | None) -> str:
     """Nom lisible de l'autre côté d'un virement, tiré du libellé bancaire :
-    « VIR INST GAULT ALEX N2 » -> « GAULT ALEX N2 » ; références, dates et mentions répétées retirées."""
+    « VIR INST MARTIN ALEX N2 » -> « MARTIN ALEX N2 » ; références, dates et mentions répétées retirées."""
     s = _REF.sub(" ", label or "")
     s = _PREFIX.sub("", s.strip())
     s = re.split(r"\s(VIR\b|VIREMENT)", s, maxsplit=1)[0]
@@ -569,7 +569,7 @@ def commun(months: int = 6):
             return {"months": [], "avg": None}
         rows = c.execute(
             """SELECT to_char(date_trunc('month', booked_on), 'YYYY-MM') AS month,
-                      COALESCE(sum(amount) FILTER (WHERE amount > 0 AND amount < 2000 AND label ~* 'GAULT ALEX|COMMUN'), 0) AS alex,
+                      COALESCE(sum(amount) FILTER (WHERE amount > 0 AND amount < 2000 AND label ~* 'MARTIN ALEX|COMMUN'), 0) AS alex,
                       COALESCE(sum(amount) FILTER (WHERE amount > 0 AND amount < 2000 AND label ~* 'SAM'), 0) AS sam,
                       COALESCE(sum(amount) FILTER (WHERE amount > 0 AND NOT ((amount < 2000 AND label ~* 'ALEX|COMMUN|SAM'))), 0) AS autres_entrees,
                       COALESCE(-sum(amount) FILTER (WHERE amount < 0 AND COALESCE(category, '') <> 'virement_interne'), 0) AS charges,
@@ -579,7 +579,7 @@ def commun(months: int = 6):
                  AND booked_on < date_trunc('month', current_date)
                GROUP BY 1 ORDER BY 1""", (ids, months)).fetchall()
         cur = c.execute(
-            """SELECT COALESCE(sum(amount) FILTER (WHERE amount > 0 AND amount < 2000 AND label ~* 'GAULT ALEX|COMMUN'), 0) AS alex,
+            """SELECT COALESCE(sum(amount) FILTER (WHERE amount > 0 AND amount < 2000 AND label ~* 'MARTIN ALEX|COMMUN'), 0) AS alex,
                       COALESCE(sum(amount) FILTER (WHERE amount > 0 AND amount < 2000 AND label ~* 'SAM'), 0) AS sam,
                       COALESCE(-sum(amount) FILTER (WHERE amount < 0 AND COALESCE(category, '') <> 'virement_interne'), 0) AS charges
                FROM transactions WHERE account_id = ANY(%s) AND booked_on >= date_trunc('month', current_date)""", (ids,)).fetchone()
