@@ -5,18 +5,18 @@ import { api, BreakdownRow, Kind } from "../api";
 import { useFetch } from "../useFetch";
 import { legendText } from "../components/legend";
 import { usePerson } from "../person";
-import { cycleLabel, date, KINDS, money, money0, signed } from "../format";
-import Kpi from "../components/Kpi";
+import { cycleLabel, date, KINDS, money, money0, signed, pct, moneyParts } from "../format";
+import { BigNumber, Button, Card, ChartA11y, ErrorState, LoadingState, ProgressBar, Stat } from "../components/ui";
 import Donut from "../components/Donut";
 import Avoidable from "../components/Avoidable";
 import Savings from "../components/Savings";
 import Partage from "../components/Partage";
-import Progress from "../components/Progress";
 import Status from "../components/Status";
 import { shortDate } from "../format";
+import Kpi from "../components/Kpi";
 
 const axis = { stroke: "var(--muted)", fontSize: 12, tickLine: false, axisLine: false };
-const tip = { contentStyle: { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8 } };
+const tip = { contentStyle: { background: "var(--glass-solid)", border: "1px solid var(--glass-border)", borderRadius: 12, color: "var(--ink)" } };
 const KIND_ORDER: Kind[] = ["income", "fixed", "household", "variable", "internal", "savings"];
 const KIND_COLOR: Record<Kind, string> = {
   income: "var(--series-3)", fixed: "var(--series-1)", household: "var(--series-7)", variable: "var(--series-2)",
@@ -30,61 +30,58 @@ export default function Budget() {
   const m = useFetch(() => api.budgetMonthly(person), [person]);
   const b = useFetch(() => api.breakdown(person), [person]);
 
-  if (s.error) return <div className="err">{s.error}</div>;
+  if (s.error) return <ErrorState error={s.error} what="le budget" onRetry={() => location.reload()} />;
   const sum = s.data;
-  if (sum && sum.cycles === 0) return <PartialBudget person={person} />;
+  if (!sum) return <><h1 className="sr">Budget</h1><LoadingState /></>;
+  if (sum.cycles === 0) return <PartialBudget person={person} />;
 
   const buf = sum?.buffer;
   const bufPct = buf ? Math.min(100, (buf.liquid / buf.target) * 100) : 0;
+  const cyc = m.data ?? [];
+  const lastCyc = cyc.at(-1);
 
   return (
     <>
-      <div className="page-head">
-        <div>
-          <h1>Budget</h1>
-          <div className="sub">
-            Moyenne mensuelle sur {sum?.cycles ?? "–"} cycle(s) complet(s), du {date(sum?.from_day ?? null)} au{" "}
-            {date(sum?.to_day ?? null)} · cycle aligné sur la paie (du 25 au 24)
-          </div>
-        </div>
-      </div>
+      <h1 className="sr">Budget</h1>
+      <BigNumber value={sum?.available} sign tone={sum?.available != null && sum.available < 0 ? "warn" : "good"} label="Reste à vivre épargnable / mois">
+        <div className="sub">Moyenne sur {sum?.cycles ?? "–"} cycle(s) complet(s), du {date(sum?.from_day ?? null)} au {date(sum?.to_day ?? null)}</div>
+      </BigNumber>
 
       <div className="grid kpis">
-        <Kpi label="Revenus / mois" value={money(sum?.income)} hint={sum?.internal_net ? `+ ${money(sum.internal_net)} de virements entre vous` : undefined} />
-        <Kpi label="Charges fixes / mois" value={money(sum?.fixed)} hint="Assurances, abonnements, compte commun…" />
-        <Kpi label="Dépenses variables / mois" value={money(sum?.variable)} />
-        <Kpi label="Reste à vivre épargnable" value={sum?.available != null ? signed(sum.available) : "—"}
-          hint="Revenus + virements reçus − dépenses" />
+        <Stat label="Revenus / mois" value={moneyParts(sum?.income).value} unit="€" hint={sum?.internal_net ? `+ ${money(sum.internal_net)} de virements entre vous` : undefined} />
+        <Stat label="Charges fixes / mois" value={moneyParts(sum?.fixed).value} unit="€" hint="Assurances, abonnements, compte commun…" />
+        <Stat label="Dépenses variables / mois" value={moneyParts(sum?.variable).value} unit="€" />
+        <Stat label="Investissable / mois" value={moneyParts(sum?.investable).value} unit="€" hint="Après reconstitution du coussin" />
       </div>
 
-      <div className="grid two" style={{ marginBottom: 16 }}>
-        <div className="card">
-          <h2>Par cycle</h2>
+      <div className="grid two mb-16">
+        <Card title="Par cycle" aside="fixes, variables et revenus">
+          <ChartA11y label="Dépenses et revenus par cycle de paie" summary={lastCyc ? `Dernier cycle (${cycleLabel(lastCyc.cycle)}) : ${money0(lastCyc.fixed)} de charges fixes, ${money0(lastCyc.variable)} de dépenses variables, ${money0(lastCyc.income)} de revenus.` : undefined}>
           <ResponsiveContainer width="100%" height={260}>
-            <ComposedChart data={m.data ?? []}>
-              <CartesianGrid stroke="var(--border)" vertical={false} />
+            <ComposedChart data={cyc}>
+              <CartesianGrid stroke="var(--hairline)" vertical={false} />
               <XAxis dataKey="cycle" tickFormatter={(c) => short(c)} {...axis} />
-              <YAxis tickFormatter={(v) => money0(v)} width={70} {...axis} />
-              <Tooltip {...tip} formatter={(v) => money(Number(v))}
+              <YAxis tickFormatter={(v) => money0(v)} width={64} {...axis} />
+              <Tooltip {...tip} formatter={(v) => money0(Number(v))}
                 labelFormatter={(c, p) => `${cycleLabel(String(c))}${p?.[0]?.payload?.complete ? "" : " (en cours)"}`}
-                cursor={{ fill: "var(--surface-2)" }} />
+                cursor={{ fill: "var(--track)" }} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} formatter={legendText} />
               <Bar isAnimationActive={false} dataKey="fixed" name="Fixes" stackId="d" fill="var(--series-1)" />
               <Bar isAnimationActive={false} dataKey="variable" name="Variables" stackId="d" fill="var(--series-2)" radius={[4, 4, 0, 0]} />
               <Line isAnimationActive={false} dataKey="income" name="Revenus" stroke="var(--series-3)" strokeWidth={2} dot={{ r: 4 }} />
             </ComposedChart>
           </ResponsiveContainer>
-        </div>
+          </ChartA11y>
+        </Card>
 
-        <div className="card">
-          <h2>Combien mettre de côté ?</h2>
+        <Card title="Combien mettre de côté ?">
           {buf && (
             <>
               <div className="kpi-label">Coussin de sécurité ({buf.months} mois de dépenses)</div>
-              <div className="meter"><div style={{ width: `${bufPct}%` }} /></div>
+              <div className="my-bar"><ProgressBar value={bufPct} label="Coussin de sécurité constitué" /></div>
               <div className="sub">{money0(buf.liquid)} disponibles sur {money0(buf.target)} visés</div>
-              <div style={{ marginTop: 18 }} className="kpi-label">Investissable chaque mois</div>
-              <div className="kpi-value">{money(sum?.investable)}</div>
+              <div className="kpi-label mt-18">Investissable chaque mois</div>
+              <div className="v num">{money(sum?.investable)}</div>
               <p className="explain">
                 Capacité d'épargne moyenne <b>{signed(sum!.available!)}</b>
                 {buf.shortfall > 0 ? (
@@ -95,19 +92,17 @@ export default function Budget() {
               </p>
             </>
           )}
-        </div>
+        </Card>
       </div>
 
       <div className="grid two">
-        <div className="card">
-          <h2>Par poste (moyenne mensuelle)</h2>
-          {b.data && <Breakdown rows={b.data} />}
-        </div>
-        <div className="card" style={{ alignSelf: "start" }}>
-          <h2>Où part l'argent</h2>
+        <Card title="Par poste (moyenne mensuelle)">
+          {b.error ? <ErrorState error={b.error} what="les postes" /> : b.data ? <Breakdown rows={b.data} /> : <LoadingState />}
+        </Card>
+        <Card className="self-start" title="Où part l'argent">
           {b.data && <Donut items={spendSlices(b.data)} center="Dépenses / mois" />}
           <p className="explain">Charges fixes, compte commun et dépenses variables : les 5 premiers postes, le reste regroupé. Le détail complet est dans la liste.</p>
-        </div>
+        </Card>
       </div>
 
       <HouseholdSplit />
@@ -115,9 +110,9 @@ export default function Budget() {
       <Caps person={person} />
       <RecurringList person={person} />
       <Partage />
-      <div style={{ height: 16 }} />
+      <div className="h-16" />
       <Avoidable person={person} />
-      <div style={{ height: 16 }} />
+      <div className="h-16" />
       <Savings />
     </>
   );
@@ -151,7 +146,7 @@ function HouseholdSplit() {
                     <>
                       <td className="num">{money0(p.income)}</td>
                       <td className="num">{money0(p.contribution)}</td>
-                      <td className="num">{p.effort_pct != null ? `${p.effort_pct.toLocaleString("fr-FR")} %` : "—"}</td>
+                      <td className="num">{p.effort_pct != null ? pct(p.effort_pct, 1) : "—"}</td>
                       <td className="num">{p.fair_contribution != null ? money0(p.fair_contribution) : "—"}</td>
                     </>
                   ) : <td colSpan={4} className="num sub">comptes non connectés</td>}
@@ -187,33 +182,33 @@ function Caps({ person }: { person: number | null }) {
     <>
       <div className="section-title" id="plafonds">Plafonds par catégorie</div>
       <div className="card">
-        <p className="explain" style={{ marginTop: 0 }}>
+        <p className="explain mt-0">
           Un plafond par cycle de paie. Notification ntfy à 80 % puis au dépassement, avec la projection de fin de cycle.
         </p>
         {caps.data?.length ? (
-          <div className="stack" style={{ gap: 16, marginBottom: 16 }}>
+          <div className="stack gap-16 mb-16">
             {caps.data.map((k) => (
-              <div key={k.category} className="stack" style={{ gap: 6 }}>
+              <div key={k.category} className="stack gap-6">
                 <div className="line">
                   <span><b>{k.label}</b> <span className="sub">· {money0(k.spent)} / {money0(k.monthly)} · projection {money0(k.projected)}</span></span>
-                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span className="d-flex gap-6 ai-center">
                     {k.pct >= 100 ? <Status level="critical">Dépassé</Status> : k.pct >= k.alert_pct ? <Status level="warning">{k.pct} %</Status> : <span className="sub">{k.pct} %</span>}
-                    <button className="ghost" aria-label={`Supprimer le plafond ${k.label}`}
-                      onClick={async () => { await api.deleteCap(k.category); setReload((n) => n + 1); }}>✕</button>
+                    <Button variant="ghost" className="icon" aria-label={`Supprimer le plafond ${k.label}`}
+                      onClick={async () => { await api.deleteCap(k.category); setReload((n) => n + 1); }}>✕</Button>
                   </span>
                 </div>
-                <Progress value={k.pct} mark={null} state={k.pct >= 100 ? "over" : k.pct >= k.alert_pct ? "near" : undefined} />
+                <ProgressBar value={k.pct} label={`Plafond ${k.label}`} state={k.pct >= 100 ? "over" : k.pct >= k.alert_pct ? "near" : undefined} />
               </div>
             ))}
           </div>
         ) : null}
-        <div className="toolbar" style={{ marginBottom: 0 }}>
+        <div className="toolbar mb-0">
           <select value={cat} onChange={(e) => setCat(e.target.value)}>
             {cats.data?.filter((c) => c.kind === "variable" || c.kind === "fixed").filter((c) => !capped.has(c.code))
               .map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
           </select>
-          <input type="number" min={1} placeholder="€ / mois" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 120 }} />
-          <button className="primary" onClick={add}>Ajouter un plafond</button>
+          <input className="w-130" type="number" min={1} placeholder="€ / mois" value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Plafond mensuel en euros" />
+          <Button variant="primary" onClick={add}>Ajouter un plafond</Button>
         </div>
       </div>
     </>
@@ -268,9 +263,7 @@ function Breakdown({ rows }: { rows: BreakdownRow[] }) {
               {group.map((r) => (
                 <Link key={r.code} to={`/transactions?category=${r.code}`} className="row">
                   <span>{r.label} <span className="acct-meta">· {r.n}</span></span>
-                  <span className="bar">
-                    <div style={{ width: `${(Math.abs(r.amount) / max) * 100}%`, background: KIND_COLOR[k] }} />
-                  </span>
+                  <ProgressBar thin value={(Math.abs(r.amount) / max) * 100} color={KIND_COLOR[k]} label={r.label} />
                   <span className={"num " + (r.amount < 0 ? "ink" : "credit")}>{signed(r.amount)}</span>
                 </Link>
               ))}
@@ -306,11 +299,11 @@ function PartialBudget({ person }: { person: number | null }) {
         </div>
       )}
       {!!rows.length && (
-        <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card mb-16">
           <h2>Où part l'argent ce cycle <span className="sub">dépenses fixes et variables, par poste</span></h2>
           <ResponsiveContainer width="100%" height={Math.max(160, rows.length * 34)}>
             <ComposedChart data={rows} layout="vertical" margin={{ left: 8, right: 24 }}>
-              <CartesianGrid horizontal={false} stroke="var(--border)" />
+              <CartesianGrid horizontal={false} stroke="var(--hairline)" />
               <XAxis type="number" hide />
               <YAxis type="category" dataKey="label" width={150} {...axis} />
               <Tooltip {...tip} formatter={(v) => money(Number(v))} />
@@ -320,9 +313,9 @@ function PartialBudget({ person }: { person: number | null }) {
         </div>
       )}
       <Partage />
-      <div style={{ height: 16 }} />
+      <div className="h-16" />
       <Avoidable person={person} />
-      <div style={{ height: 16 }} />
+      <div className="h-16" />
       <Savings />
     </>
   );

@@ -3,7 +3,9 @@ import { Area, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, 
 import { AllocRow, api, Signal } from "../api";
 import { useFetch } from "../useFetch";
 import { usePerson } from "../person";
-import { date, money, money0, pretty, shortDate, signed } from "../format";
+import { date, initials, money, money0, num, pct as fpct, pretty, shortDate, signed } from "../format";
+import { useNarrow } from "../useNarrow";
+import { ChartA11y, ErrorState, ListItem, LoadingState, Segmented } from "../components/ui";
 import { legendText } from "../components/legend";
 import Kpi from "../components/Kpi";
 import Donut from "../components/Donut";
@@ -11,9 +13,9 @@ import Status, { Level } from "../components/Status";
 import Fees from "./Fees";
 
 const axis = { stroke: "var(--muted)", fontSize: 12, tickLine: false, axisLine: false };
-const tip = { contentStyle: { background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text)" } };
+const tip = { contentStyle: { background: "var(--glass-solid)", border: "1px solid var(--hairline)", borderRadius: 8, color: "var(--ink)" } };
 const pctFmt = (n: number | null | undefined, sign = false) =>
-  n == null ? "—" : `${sign && n > 0 ? "+" : ""}${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
+  n == null ? "—" : `${sign && n > 0 ? "+" : ""}${fpct(n, 1)}`;
 const TABS = ["Portefeuille", "Allocation", "Frais", "Marchés", "Opérations"] as const;
 
 export default function Invest() {
@@ -29,9 +31,9 @@ export default function Invest() {
           <h1>Placements</h1>
           <div className="sub">Positions, allocation cible, plan d'investissement, frais et marchés. Chiffres calculés par le moteur de règles ; rien n'est exécuté.</div>
         </div>
-        <div className="seg" role="tablist">
-          {TABS.map((t) => <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}
-        </div>
+      </div>
+      <div className="tabs-row">
+        <Segmented role="tab" label="Sections des placements" value={tab} onChange={setTab} options={TABS.map((t) => ({ value: t, label: t }))} />
       </div>
       {tab === "Portefeuille" && <Portfolio />}
       {tab === "Allocation" && <Allocation />}
@@ -49,6 +51,9 @@ function Portfolio() {
   const h = useFetch(() => api.holdings(person), [person]);
   const hist = useFetch(() => api.portfolioHistory(person), [person]);
   const d = h.data;
+  const narrow = useNarrow("(max-width: 700px)");
+  if (h.error) return <ErrorState error={h.error} what="les positions" />;
+  if (!d) return <LoadingState />;
   if (d && !d.items.length)
     return <div className="card empty">Aucun placement pour l'instant. Ajoute un compte de placement et tes opérations dans l'onglet « Opérations » (ou importe un CSV de ton courtier).</div>;
   return (
@@ -58,11 +63,12 @@ function Portfolio() {
         <Kpi label="Montant investi" value={money(d?.invested)} hint="Prix de revient, frais inclus" />
         <Kpi label="Plus-value latente" value={d ? signed(d.gain) : "—"} hint={pctFmt(d?.gain_pct, true)} />
       </div>
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card mb-16">
         <h2>Valeur du portefeuille et montant investi</h2>
+        <ChartA11y label="Valeur du portefeuille et montant investi dans le temps" summary={hist.data?.length ? `Aujourd'hui : valeur ${money0(hist.data.at(-1)!.value)}, investi ${money0(hist.data.at(-1)!.invested)}.` : undefined}>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={hist.data ?? []}>
-            <CartesianGrid stroke="var(--border)" vertical={false} />
+            <CartesianGrid stroke="var(--hairline)" vertical={false} />
             <XAxis dataKey="day" tickFormatter={(x) => shortDate(x)} minTickGap={40} {...axis} />
             <YAxis tickFormatter={(v) => money0(v)} width={80} {...axis} />
             <Tooltip {...tip} formatter={(v) => money(Number(v))} labelFormatter={(x) => date(String(x))} />
@@ -71,9 +77,19 @@ function Portfolio() {
             <Line isAnimationActive={false} type="stepAfter" dataKey="invested" name="Investi" stroke="var(--series-2)" strokeWidth={2} dot={false} />
           </ComposedChart>
         </ResponsiveContainer>
+        </ChartA11y>
       </div>
       <div className="card">
         <h2>Positions</h2>
+        {narrow ? (
+          <div className="list">
+            {d?.items.map((p) => (
+              <ListItem key={`${p.account_id}-${p.asset_id}`} icon={initials(p.asset)} title={p.asset}
+                meta={`${pretty(p.account)} · ${num(p.quantity, 4)} × ${money(p.price)}`}
+                amount={money(p.value)} sub={p.gain != null ? `${signed(p.gain)} (${pctFmt(p.gain_pct, true)})` : undefined} subTone={(p.gain ?? 0) < 0 ? "warn" : "good"} />
+            ))}
+          </div>
+        ) : (
         <div className="table-wrap">
           <table>
             <thead><tr><th>Support</th><th>Compte</th><th className="num">Quantité</th><th className="num">PRU</th><th className="num">Cours</th><th className="num">Valeur</th><th className="num">+/- value</th></tr></thead>
@@ -83,7 +99,7 @@ function Portfolio() {
                   <td><b>{p.asset}</b><span className="raw">{p.isin} · {p.exposure.replace("_", " ")}</span>
                     {!p.envelope_ok && <Status level="critical">{p.envelope_issue}</Status>}</td>
                   <td className="acct-meta">{pretty(p.account)}</td>
-                  <td className="num">{p.quantity.toLocaleString("fr-FR", { maximumFractionDigits: 4 })}</td>
+                  <td className="num">{num(p.quantity, 4)}</td>
                   <td className="num">{money(p.pru)}</td>
                   <td className="num">{money(p.price)}<span className="raw">{p.price_day ? shortDate(p.price_day) : ""}</span></td>
                   <td className="num"><b>{money(p.value)}</b></td>
@@ -93,6 +109,7 @@ function Portfolio() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </>
   );
@@ -111,12 +128,12 @@ function Allocation() {
 
   return (
     <>
-      <div className="grid two" style={{ marginBottom: 16 }}>
+      <div className="grid two mb-16">
         <div className="card">
           <h2>Actuel et cible <button onClick={() => setEditing(!editing)}>{editing ? "Fermer" : "Définir la cible"}</button></h2>
           {editing ? <TargetEditor rows={rows} onSaved={() => { setEditing(false); setReload((n) => n + 1); }} /> : <AllocBars rows={rows} />}
         </div>
-        <div className="card" style={{ alignSelf: "start" }}>
+        <div className="card as-start">
           <h2>Répartition actuelle</h2>
           <Donut items={rows.filter((r) => r.value > 0).map((r) => ({ name: r.label, value: r.value }))} center="Patrimoine financier" />
         </div>
@@ -124,7 +141,7 @@ function Allocation() {
 
       <div className="card">
         <h2>Plan d'investissement du mois <span className="sub">{plan.data ? `${money0(plan.data.monthly)} · source : ${plan.data.source}` : ""}</span></h2>
-        <label className="field" style={{ maxWidth: 420, marginBottom: 14 }}>
+        <label className="field mw-420 mb-14">
           <span>Simuler un autre montant mensuel : <b>{money0(sim ?? plan.data?.monthly ?? 0)}</b></span>
           <input type="range" min={0} max={2000} step={25} value={sim ?? plan.data?.monthly ?? 0} onChange={(e) => setSim(Number(e.target.value))} />
         </label>
@@ -157,9 +174,9 @@ function AllocBars({ rows }: { rows: AllocRow[] }) {
   const max = Math.max(100, ...rows.map((r) => Math.max(r.pct ?? 0, (r.target_pct ?? 0) + (r.band_pct ?? 0))));
   const x = (v: number) => `${(v / max) * 100}%`;
   return (
-    <div className="stack" style={{ gap: 14 }}>
+    <div className="stack gap-14">
       {rows.map((r) => (
-        <div key={r.exposure} className="stack" style={{ gap: 5 }}>
+        <div key={r.exposure} className="stack gap-5">
           <div className="line">
             <span>{r.label}</span>
             <span className="sub">
@@ -197,21 +214,21 @@ function TargetEditor({ rows, onSaved }: { rows: AllocRow[]; onSaved: () => void
   return (
     <div className="stack">
       {Object.entries(ex.data ?? {}).filter(([k]) => k !== "autre").map(([k, label]) => (
-        <label key={k} className="item-row" style={{ gridTemplateColumns: "1fr 90px" }}>
-          <span style={{ alignSelf: "center" }}>{label}</span>
+        <label key={k} className="item-row ir-90">
+          <span className="as-center">{label}</span>
           <input type="number" min={0} max={100} value={vals[k] ?? ""} placeholder="0 %"
             onChange={(e) => setVals({ ...vals, [k]: Number(e.target.value) })} />
         </label>
       ))}
-      <label className="item-row" style={{ gridTemplateColumns: "1fr 90px" }}>
-        <span style={{ alignSelf: "center" }}>Bande de tolérance (± points)</span>
+      <label className="item-row ir-90">
+        <span className="as-center">Bande de tolérance (± points)</span>
         <input type="number" min={1} max={20} value={band} onChange={(e) => setBand(Number(e.target.value))} />
       </label>
       <div className="line">
         <span className={total === 100 ? "sub" : "neg"}>Total : {total} % {total !== 100 && "(doit faire 100 %)"}</span>
         <button className="primary" disabled={total !== 100} onClick={save}>Enregistrer</button>
       </div>
-      {err && <div className="err" style={{ padding: 0 }}>{err}</div>}
+      {err && <div className="err p-0">{err}</div>}
       <p className="explain">Exemple prudent pour démarrer : liquidités (coussin inclus), fonds euros, actions monde. C'est ta décision : l'appli mesure seulement l'écart.</p>
     </div>
   );
@@ -238,7 +255,7 @@ function Markets() {
       <div className="grid kpis">
         {m.data?.macro.map((x) => <Kpi key={x.code} label={x.label} value={pctFmt(x.value)} hint={`au ${date(x.day)}`} />)}
       </div>
-      <div className="grid three" style={{ marginBottom: 16 }}>
+      <div className="grid three mb-16">
         {m.data?.signals.map((s) => (
           <SmallMultiple key={s.code} s={s} data={(pts.data ?? []).filter((p) => p.code === s.code && p.day >= since)} />
         ))}
@@ -273,18 +290,20 @@ function Markets() {
 function SmallMultiple({ s, data }: { s: Signal; data: { day: string; value: number; ma200: number }[] }) {
   return (
     <div className="card">
-      <h2 style={{ marginBottom: 4 }}>{s.label.split(" (")[0]}<Status level={TREND[s.trend] ?? "warning"}>{s.trend}</Status></h2>
-      <div className="sub" style={{ marginBottom: 8 }}>{pctFmt(s.perf_12m_pct, true)} sur 12 mois · repli {pctFmt(s.drawdown_pct)}</div>
+      <h2 className="mb-4">{s.label.split(" (")[0]}<Status level={TREND[s.trend] ?? "warning"}>{s.trend}</Status></h2>
+      <div className="sub mb-8">{pctFmt(s.perf_12m_pct, true)} sur 12 mois · repli {pctFmt(s.drawdown_pct)}</div>
+      <ChartA11y label={`Cours de ${s.label.split(" (")[0]} et moyenne 200 jours`} summary={data.length ? `Dernier cours ${num(data.at(-1)!.value, 2)}, moyenne 200 jours ${num(data.at(-1)!.ma200, 2)}, tendance ${s.trend}.` : undefined}>
       <ResponsiveContainer width="100%" height={150}>
         <ComposedChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-          <CartesianGrid stroke="var(--border)" vertical={false} />
+          <CartesianGrid stroke="var(--hairline)" vertical={false} />
           <XAxis dataKey="day" tickFormatter={(x) => shortDate(x)} minTickGap={50} {...axis} />
-          <YAxis type="number" domain={["dataMin", "dataMax"]} tickCount={4} tickFormatter={(v) => Math.round(v).toLocaleString("fr-FR")} width={44} {...axis} />
-          <Tooltip {...tip} labelFormatter={(x) => date(String(x))} formatter={(v, n) => [Number(v).toLocaleString("fr-FR"), String(n)]} />
+          <YAxis type="number" domain={["dataMin", "dataMax"]} tickCount={4} tickFormatter={(v) => num(Math.round(v))} width={44} {...axis} />
+          <Tooltip {...tip} labelFormatter={(x) => date(String(x))} formatter={(v, n) => [num(Number(v), 2), String(n)]} />
           <Line isAnimationActive={false} dataKey="value" name="Cours" stroke="var(--series-1)" strokeWidth={2} dot={false} />
           <Line isAnimationActive={false} dataKey="ma200" name="Moyenne 200 j" stroke="var(--muted)" strokeWidth={1.5} dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
+      </ChartA11y>
       <div className="acct-meta">Bleu : cours · gris : moyenne 200 jours</div>
     </div>
   );
@@ -311,8 +330,8 @@ function Operations() {
 
   return (
     <>
-      {msg && <div className="card" style={{ marginBottom: 16 }}>{msg}</div>}
-      <div className="grid three" style={{ marginBottom: 16 }}>
+      {msg && <div className="card mb-16">{msg}</div>}
+      <div className="grid three mb-16">
         <div className="card stack">
           <h2>1. Compte de placement</h2>
           <input placeholder="Nom (ex. PEA Boursorama)" value={acc.name} onChange={(e) => setAcc({ ...acc, name: e.target.value })} />
@@ -338,7 +357,7 @@ function Operations() {
           <select value={asset.exposure} onChange={(e) => setAsset({ ...asset, exposure: e.target.value })}>
             {Object.entries(ex.data ?? {}).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
           </select>
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label className="d-flex gap-8 ai-center">
             <input type="checkbox" checked={asset.pea_eligible} onChange={(e) => setAsset({ ...asset, pea_eligible: e.target.checked })} /> Éligible PEA
           </label>
           <input placeholder="Symbole de cotation (ex. CW8:XPAR), optionnel" value={asset.data_symbol} onChange={(e) => setAsset({ ...asset, data_symbol: e.target.value })} />
@@ -383,7 +402,7 @@ function Operations() {
               <tbody>{trades.data.map((t) => (
                 <tr key={t.id}>
                   <td>{date(t.day)}</td><td>{t.asset}<span className="raw">{pretty(t.account)} · {t.source}</span></td><td>{t.kind}</td>
-                  <td className="num">{t.quantity.toLocaleString("fr-FR")}</td><td className="num">{money(t.price)}</td>
+                  <td className="num">{num(t.quantity, 4)}</td><td className="num">{money(t.price)}</td>
                   <td className="num"><button className="ghost" aria-label="Supprimer" onClick={async () => { await api.deleteTrade(t.id); done("Opération supprimée."); }}>✕</button></td>
                 </tr>
               ))}</tbody>
@@ -395,7 +414,7 @@ function Operations() {
           <select value={csv.account_id} onChange={(e) => setCsv({ ...csv, account_id: e.target.value })}>
             <option value="">Compte…</option>{invest.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <textarea style={{ minHeight: 140, fontFamily: "ui-monospace, monospace", fontSize: 12 }}
+          <textarea className="mono-ta"
             placeholder={"date;isin;nom;type;quantite;prix;frais\n2026-09-01;FR0010315770;ETF Monde;achat;3;512,40;1,99"}
             value={csv.text} onChange={(e) => setCsv({ ...csv, text: e.target.value })} />
           <button className="primary" disabled={!csv.account_id || !csv.text} onClick={async () => {

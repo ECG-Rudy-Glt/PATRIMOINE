@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, Goal, GoalIn } from "../api";
 import { useFetch } from "../useFetch";
-import { date, money, money0, monthsLabel, pretty } from "../format";
+import { date, money, money0, monthsLabel, pct, pretty } from "../format";
 import Progress from "../components/Progress";
+import { ErrorState, LoadingState } from "../components/ui";
 import Status, { Level } from "../components/Status";
 
 const KINDS: Record<string, { label: string; items: string[] }> = {
@@ -47,6 +48,8 @@ export default function Goals() {
         <button className="primary" onClick={() => open()}>Nouvel objectif</button>
       </div>
 
+      {goals.error && <ErrorState error={goals.error} what="les objectifs" onRetry={() => setReload((n) => n + 1)} />}
+      {goals.loading && <LoadingState />}
       {goals.data && !goals.data.length && (
         <div className="card empty">
           Aucun objectif pour l'instant. Commence par ce qui compte : un achat immobilier, un coussin de sécurité, un voyage.
@@ -77,16 +80,16 @@ function GoalCard({ g, onEdit }: { g: Goal; onEdit: () => void }) {
             {KINDS[g.kind]?.label ?? g.kind} · {g.person ?? "Foyer"} · échéance {date(g.target_date)} ({monthsLabel(g.months_left)}) · priorité {g.priority}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div className="d-flex gap-8 ai-center">
           <Status level={level}>{label}</Status>
           <button onClick={onEdit}>Modifier</button>
         </div>
       </div>
 
       <div>
-        <div className="line" style={{ marginBottom: 6 }}>
+        <div className="line mb-6">
           <span><b>{money0(g.current)}</b> <span className="sub">sur {money0(g.target)}</span></span>
-          <span className="sub">{g.progress_pct.toLocaleString("fr-FR")} %</span>
+          <span className="sub">{pct(g.progress_pct, 1)}</span>
         </div>
         <Progress value={g.progress_pct} />
       </div>
@@ -112,8 +115,8 @@ function GoalCard({ g, onEdit }: { g: Goal; onEdit: () => void }) {
       {g.status === "active" && <Simulator g={g} />}
 
       <details>
-        <summary className="sub" style={{ cursor: "pointer" }}>Détail des postes ({g.items.length})</summary>
-        <div className="stack" style={{ marginTop: 10 }}>
+        <summary className="sub cur-p">Détail des postes ({g.items.length})</summary>
+        <div className="stack mt-10">
           {g.items.map((i) => <div className="line" key={i.id}><span>{i.label}</span><b>{money(i.amount)}</b></div>)}
           {!!g.accounts.length && <div className="sub">Comptes affectés : {g.accounts.map((a) => `${pretty(a.name ?? "")} (${Math.round(a.share * 100)} %)`).join(", ")}</div>}
           {g.notes && <div className="explain">{g.notes}</div>}
@@ -143,7 +146,7 @@ function Simulator({ g }: { g: Goal }) {
   if (!open) return <div><button onClick={() => setOpen(true)}>Simuler « et si… »</button></div>;
   const [level, label] = res?.feasibility ? FEAS[res.feasibility] : ["good" as Level, "—"];
   return (
-    <div className="card" style={{ background: "var(--surface-2)", boxShadow: "none" }}>
+    <div className="card">
       <h2>Simulation <button className="ghost" onClick={() => { setOpen(false); setExtra(0); setDelta(0); setTargetDate(g.target_date); }}>Fermer</button></h2>
       <div className="cols-2">
         <label className="field"><span>Échéance</span>
@@ -151,12 +154,12 @@ function Simulator({ g }: { g: Goal }) {
         <label className="field"><span>Ajuster le budget de l'objectif (€)</span>
           <input type="number" step={1000} value={delta} onChange={(e) => setDelta(Number(e.target.value) || 0)} /></label>
       </div>
-      <label className="field" style={{ marginTop: 12 }}>
+      <label className="field mt-12">
         <span>Économies supplémentaires : <b>{money0(extra)} / mois</b> (ex. moins d'achats en ligne)</span>
         <input type="range" min={0} max={1000} step={10} value={extra} onChange={(e) => setExtra(Number(e.target.value))} />
       </label>
       {res && (
-        <div className="facts" style={{ marginTop: 14 }}>
+        <div className="facts mt-14">
           <div className="fact"><div className="kpi-label">Effort nécessaire</div>
             <b>{res.monthly_needed != null ? `${money0(res.monthly_needed)} / mois` : "—"}</b>
             <div className="acct-meta">réel : {g.monthly_needed != null ? money0(g.monthly_needed) : "—"}</div></div>
@@ -204,7 +207,7 @@ function GoalForm({ initial, id, onClose, onSaved }: { initial: GoalIn; id?: num
     <>
       <div className="drawer-backdrop" onClick={onClose} />
       <aside className="drawer" role="dialog" aria-label={id ? "Modifier l'objectif" : "Nouvel objectif"}>
-        <div className="line"><h1 style={{ fontSize: 20 }}>{id ? "Modifier l'objectif" : "Nouvel objectif"}</h1>
+        <div className="line"><h1 className="fs-20">{id ? "Modifier l'objectif" : "Nouvel objectif"}</h1>
           <button className="ghost" onClick={onClose} aria-label="Fermer">✕</button></div>
 
         <label className="field"><span>Nom</span>
@@ -233,7 +236,7 @@ function GoalForm({ initial, id, onClose, onSaved }: { initial: GoalIn; id?: num
         </div>
 
         <div className="field"><span>Postes · total {money0(total)}</span>
-          <div className="stack" style={{ gap: 6 }}>
+          <div className="stack gap-6">
             {g.items.map((it, i) => (
               <div className="item-row" key={i}>
                 <input value={it.label} aria-label="Poste" onChange={(e) => set("items", g.items.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
@@ -247,12 +250,12 @@ function GoalForm({ initial, id, onClose, onSaved }: { initial: GoalIn; id?: num
         </div>
 
         <div className="field"><span>Comptes affectés (part du solde qui compte pour cet objectif)</span>
-          <div className="stack" style={{ gap: 6 }}>
+          <div className="stack gap-6">
             {accounts.data?.map((a) => {
               const cur = g.accounts.find((x) => x.account_id === a.id);
               return (
-                <div className="item-row" key={a.id} style={{ gridTemplateColumns: "1fr 120px" }}>
-                  <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div className="item-row ir-120" key={a.id}>
+                  <label className="d-flex gap-8 ai-center">
                     <input type="checkbox" checked={!!cur}
                       onChange={(e) => set("accounts", e.target.checked ? [...g.accounts, { account_id: a.id, share: 1 }] : g.accounts.filter((x) => x.account_id !== a.id))} />
                     {pretty(a.name)} <span className="acct-meta">{money0(a.balance)}</span>
@@ -275,10 +278,10 @@ function GoalForm({ initial, id, onClose, onSaved }: { initial: GoalIn; id?: num
         <label className="field"><span>Notes (critères, ville, type de bien…)</span>
           <textarea value={g.notes ?? ""} onChange={(e) => set("notes", e.target.value)} /></label>
 
-        {err && <div className="err" style={{ padding: 0, textAlign: "left" }}>{err}</div>}
+        {err && <div className="err p-0 ta-left">{err}</div>}
         <div className="line">
           {id ? <button className="ghost" onClick={remove}>Supprimer</button> : <span />}
-          <span style={{ display: "flex", gap: 8 }}><button onClick={onClose}>Annuler</button><button className="primary" onClick={save}>Enregistrer</button></span>
+          <span className="d-flex gap-8"><button onClick={onClose}>Annuler</button><button className="primary" onClick={save}>Enregistrer</button></span>
         </div>
       </aside>
     </>

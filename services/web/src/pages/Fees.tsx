@@ -2,12 +2,12 @@ import { useState } from "react";
 import { api, FeeAccount, FeeBenchmark, FeeSchedule } from "../api";
 import { useFetch } from "../useFetch";
 import { usePerson } from "../person";
-import { money, money0, pretty, signed } from "../format";
+import { money, money0, pct as fpct, pretty, signed } from "../format";
 import Kpi from "../components/Kpi";
 
 // Onglet « Frais » de Placements : tous les chiffres viennent de /alloc/fees (allocation-engine), rien n'est calculé ici.
 const pctFmt = (n: number | null | undefined, digits = 2) =>
-  n == null ? "—" : `${n.toLocaleString("fr-FR", { maximumFractionDigits: digits })} %`;
+  n == null ? "—" : fpct(n, digits);
 const ENV: Record<string, string> = { pea: "PEA", cto: "Compte-titres", assurance_vie: "Assurance-vie", per: "PER" };
 
 export default function Fees() {
@@ -21,7 +21,7 @@ export default function Fees() {
 
   return (
     <>
-      <div className="grid kpis" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
+      <div className="grid kpis kpis-fit">
         <Kpi label="Tous mes frais, par an" value={money0(t.all_annual)}
           hint={d?.bank.available ? "Placements + frais bancaires" : "Placements seuls (budget indisponible)"} />
         <Kpi label="Frais des placements, par an" value={money0(t.annual)}
@@ -33,21 +33,21 @@ export default function Fees() {
 
       {f.error && <div className="card err">{f.error}</div>}
       {d && !d.accounts.length && (
-        <div className="card empty" style={{ marginBottom: 16 }}>
+        <div className="card empty mb-16">
           Aucun compte de placement. Crée-le dans l'onglet « Opérations », puis saisis ici son barème de frais.
         </div>
       )}
 
       {!!d?.accounts.length && (
-        <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card mb-16">
           <h2>Coût par compte <span className="sub">rendement brut hypothétique {pctFmt(d.gross_return_pct)} par an</span></h2>
           {d.accounts.map((a) => {
             const p20 = a.projection["20"], p10 = a.projection["10"];
             return (
               <section key={a.account_id} className="fee-account">
-                <div className="line" style={{ alignItems: "flex-start" }}>
+                <div className="line ai-flex-start">
                   <div>
-                    <b style={{ fontSize: 15 }}>{pretty(a.name)}</b>
+                    <b className="fs-15">{pretty(a.name)}</b>
                     <div className="acct-meta">{a.envelope}{a.institution ? ` · ${a.institution}` : ""} · encours {money0(a.value)} · versement {money0(a.monthly_contribution)}/mois ({a.contribution_source})</div>
                   </div>
                   <button onClick={() => setEditing(editing === a.account_id ? null : a.account_id)}>{editing === a.account_id ? "Fermer" : "Barème"}</button>
@@ -122,9 +122,9 @@ function ScheduleEditor({ a, onSaved }: { a: FeeAccount; onSaved: () => void }) 
     } catch (e) { setErr(String(e).replace(/^Error: \d+ /, "")); }
   };
   return (
-    <div className="stack" style={{ marginTop: 16, borderTop: "1px solid var(--border)", paddingTop: 14 }}>
-      <h2 style={{ margin: 0 }}>Barème — {pretty(a.name)} <span className="sub">voir les conditions tarifaires ou le DIC du contrat</span></h2>
-      <div className="grid three" style={{ gap: 10 }}>
+    <div className="stack topline">
+      <h2 className="m-0">Barème — {pretty(a.name)} <span className="sub">voir les conditions tarifaires ou le DIC du contrat</span></h2>
+      <div className="grid three gap-10">
         {FIELDS.map(([k, label, unit]) => (
           <label key={k} className="field">
             <span>{label} <span className="sub">({unit})</span></span>
@@ -160,8 +160,8 @@ function TerEditor({ onSaved }: { onSaved: () => void }) {
     <div className="card stack">
       <h2>Frais courants des supports (TER)</h2>
       {!held.length ? <div className="empty">Aucun support détenu.</div> : held.map((s) => (
-        <label key={s.id} className="item-row" style={{ gridTemplateColumns: "1fr 100px" }}>
-          <span style={{ alignSelf: "center" }}>{s.name}<span className="raw">{s.isin}</span></span>
+        <label key={s.id} className="item-row ir-100">
+          <span className="as-center">{s.name}<span className="raw">{s.isin}</span></span>
           <input type="number" min={0} step="any" placeholder="% / an"
             value={vals[s.id] ?? (s.ter == null ? "" : String(s.ter))} onChange={(e) => setVals({ ...vals, [s.id]: e.target.value })} />
         </label>
@@ -191,10 +191,10 @@ function ParamsEditor({ onSaved }: { onSaved: () => void }) {
     } catch (e) { setMsg(String(e).replace(/^Error: \d+ /, "")); }
   };
   return (
-    <div className="card stack" style={{ alignSelf: "start" }}>
+    <div className="card stack as-start">
       <h2>Hypothèses</h2>
-      <label className="item-row" style={{ gridTemplateColumns: "1fr 100px" }}>
-        <span style={{ alignSelf: "center" }}>Rendement brut annuel hypothétique (%)</span>
+      <label className="item-row ir-100">
+        <span className="as-center">Rendement brut annuel hypothétique (%)</span>
         <input type="number" min={0} max={15} step="0.1" value={gross ?? String(p.data?.gross_return_pct ?? "")}
           onChange={(e) => setGross(e.target.value)} />
       </label>
@@ -204,7 +204,7 @@ function ParamsEditor({ onSaved }: { onSaved: () => void }) {
           <tr key={b.account_type}>
             <td><b>{ENV[b.account_type] ?? b.account_type}</b><span className="raw">{b.label}</span></td>
             {(["mgmt_pct", "entry_pct", "custody_eur", "ter_pct"] as const).map((k) => (
-              <td key={k} className="num"><input type="number" min={0} step="any" style={{ width: 70 }}
+              <td key={k} className="num"><input className="w-70" type="number" min={0} step="any"
                 placeholder={k === "ter_pct" ? "réel" : "0"} value={b[k] == null ? "" : String(b[k])}
                 onChange={(e) => edit(i, k, e.target.value)} /></td>
             ))}

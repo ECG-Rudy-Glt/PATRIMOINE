@@ -42,7 +42,7 @@ export default function Alerts() {
         </div>
       </div>
 
-      <div className="grid two" style={{ marginBottom: 16 }}>
+      <div className="grid two mb-16">
         <div className="card">
           <h2>Seuils</h2>
           <table>
@@ -64,13 +64,13 @@ export default function Alerts() {
               ))}
             </tbody>
           </table>
-          <div className="toolbar" style={{ marginTop: 14, marginBottom: 0 }}>
+          <div className="toolbar mt-14 mb-0">
             <select value={target} onChange={(e) => setTarget(e.target.value)}>
               <option value="type:courant">Tous les comptes courants</option>
               <option value="type:livret">Tous les livrets</option>
               {accounts.data?.map((a) => <option key={a.id} value={`acc:${a.id}`}>{pretty(a.name)} ({a.institution})</option>)}
             </select>
-            <input type="number" placeholder="Seuil €" value={threshold} onChange={(e) => setThreshold(e.target.value)} style={{ width: 110 }} />
+            <input className="w-110" type="number" placeholder="Seuil €" value={threshold} onChange={(e) => setThreshold(e.target.value)} />
             <button className="primary" onClick={add}>Ajouter</button>
           </div>
         </div>
@@ -80,15 +80,15 @@ export default function Alerts() {
           <PushCard webpush={!!channel.data?.webpush} />
           {channel.data?.ntfy && (
             <p className="explain">
-              Aussi via l'appli <b>ntfy</b> (serveur <b>{channel.data.server}</b>, sujet communiqué par Alex : il sert de mot de passe, ne le partage pas).
+              Aussi via l'appli <b>ntfy</b> (serveur <b>{channel.data.server}</b>, sujet communiqué par l'administrateur : il sert de mot de passe, ne le partage pas).
             </p>
           )}
           {!channel.data?.ntfy && !channel.data?.webpush && (
             <p className="explain">Les notifications ne sont pas encore activées : les alertes restent visibles ici uniquement.</p>
           )}
           <button onClick={test} disabled={!channel.data?.ntfy && !channel.data?.devices}>Envoyer une notification de test</button>
-          {msg && <div className="sub" style={{ marginTop: 8 }}>{msg}</div>}
-          <p className="explain" style={{ marginTop: 14 }}>
+          {msg && <div className="sub mt-8">{msg}</div>}
+          <p className="explain mt-14">
             Une alerte ne se redéclenche qu'après être repassée au-dessus du seuil. Fréquence : à chaque synchronisation (06:30 et 18:30).
           </p>
         </div>
@@ -127,7 +127,7 @@ function Unusual() {
     <>
       <div className="section-title">Dépenses inhabituelles</div>
       <div className="card">
-        <p className="explain" style={{ marginTop: 0 }}>
+        <p className="explain mt-0">
           À chaque synchro, une dépense de 50 € ou plus est signalée si elle dépasse 3× ton habitude chez ce marchand,
           ou 2× tes plus grosses dépenses de la catégorie. Notification sur téléphone.
         </p>
@@ -154,27 +154,27 @@ function Digest() {
     <>
       <div className="section-title">Digest mensuel par email</div>
       <div className="card">
-        <p className="explain" style={{ marginTop: 0 }}>
+        <p className="explain mt-0">
           Le 25 de chaque mois (début de cycle), chaque personne reçoit le bilan du cycle écoulé ; le 1er du mois, le rapport complet (résumé et classeur Excel) est envoyé aux deux : chiffres, principaux postes,
           plafonds, objectifs, abonnements à surveiller, dépenses inhabituelles.
         </p>
         <div className="stack">
           {persons.data?.map((p) => (
-            <label key={p.id} className="item-row" style={{ gridTemplateColumns: "90px 1fr" }}>
-              <b style={{ alignSelf: "center" }}>{p.name}</b>
+            <label key={p.id} className="item-row ir-90-1">
+              <b className="as-center">{p.name}</b>
               <input type="email" defaultValue={p.email ?? ""} placeholder="adresse email"
                 onBlur={(e) => e.target.value !== (p.email ?? "") && save(p, e.target.value)} />
             </label>
           ))}
         </div>
-        <div className="toolbar" style={{ marginTop: 14, marginBottom: 0 }}>
+        <div className="toolbar mt-14 mb-0">
           <a href="/api/digest/preview" target="_blank" rel="noreferrer"><button>Aperçu</button></a>
           <button onClick={async () => {
             try { const r = await api.digestSend(); setMsg(`Envoyé à ${r.sent.join(", ") || "personne (aucune adresse)"}.`); }
             catch (e) { setMsg(String(e).includes("SMTP") ? "Envoi impossible : le service d'e-mail n'est pas configuré." : String(e)); }
           }}>Envoyer maintenant</button>
         </div>
-        {msg && <div className="sub" style={{ marginTop: 8 }}>{msg}</div>}
+        {msg && <div className="sub mt-8">{msg}</div>}
       </div>
     </>
   );
@@ -206,18 +206,18 @@ function PushCard({ webpush }: { webpush: boolean }) {
 
   if (!state) return null;
   return (
-    <div style={{ marginBottom: 14 }}>
-      <p className="explain" style={{ marginTop: 0 }}>{PUSH_HELP[state]}</p>
+    <div className="mb-14">
+      <p className="explain mt-0">{PUSH_HELP[state]}</p>
       {(state === "off" || state === "on") && (
         <button className={state === "off" ? "primary" : undefined} onClick={toggle} disabled={busy}>
           {state === "off" ? "Activer sur cet appareil" : "Désactiver sur cet appareil"}
         </button>
       )}
-      {err && <div className="sub" style={{ marginTop: 8 }}>{err}</div>}
+      {err && <div className="sub mt-8">{err}</div>}
       {!!devices.data?.length && (
-        <div className="stack" style={{ marginTop: 12 }}>
+        <div className="stack mt-12">
           {devices.data.map((d) => (
-            <div key={d.id} className="item-row" style={{ gridTemplateColumns: "1fr auto" }}>
+            <div key={d.id} className="item-row ir-auto">
               <span>{d.device ?? "Appareil"} <span className="acct-meta">· depuis le {new Date(d.created_at).toLocaleDateString("fr-FR")}
                 {d.last_ok_at ? ` · dernier envoi ${dateTime(d.last_ok_at)}` : ""}{d.failures ? ` · ${d.failures} échec(s)` : ""}</span></span>
               <button className="ghost" aria-label="Retirer cet appareil"

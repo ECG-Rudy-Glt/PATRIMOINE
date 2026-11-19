@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api, BankSession } from "../api";
 import { useFetch } from "../useFetch";
 import { date, dateTime, pretty } from "../format";
+import { ErrorState, LoadingState } from "../components/ui";
 import Status, { Level } from "../components/Status";
 
 const RENEW_DAYS = 14;
@@ -55,20 +56,20 @@ export default function Banks() {
       )}
       {err && <div className="notice" role="alert"><span>{err}</span></div>}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card mb-16">
         <h2>Accès bancaires <span className="sub">{current.length} session(s) active(s)</span></h2>
-        {sessions.error ? <div className="err">{sessions.error}</div> : current.length ? (
+        {sessions.error ? <ErrorState error={sessions.error} what="les accès bancaires" onRetry={() => location.reload()} /> : current.length ? (
           <div>
             {current.map((s) => {
               const [level, label] = expiry(s);
               return (
                 <section key={s.session_id} className="bank-session">
-                  <div className="line" style={{ alignItems: "flex-start" }}>
+                  <div className="line ai-flex-start">
                     <div>
-                      <b style={{ fontSize: 15 }}>{s.bank}</b>
-                      <div className="acct-meta" style={{ marginTop: 2 }}>
+                      <b className="fs-15">{s.bank}</b>
+                      <div className="acct-meta mt-2">
                         {s.accounts.length ? s.accounts.map((a) => (
-                          <span key={a.uid} style={{ display: "block" }}>{a.name ? pretty(a.name) : "Compte en attente de synchro"}{a.holders ? ` · ${a.holders}` : ""}</span>
+                          <span key={a.uid} className="d-block">{a.name ? pretty(a.name) : "Compte en attente de synchro"}{a.holders ? ` · ${a.holders}` : ""}</span>
                         )) : "Aucun compte renvoyé (voir « Link accounts »)"}
                       </div>
                     </div>
@@ -77,7 +78,7 @@ export default function Banks() {
                       {busy === s.session_id ? "Redirection…" : "Renouveler"}
                     </button>
                   </div>
-                  <div className="chips" style={{ alignItems: "center" }}>
+                  <div className="chips ai-center">
                     <Status level={level}>{label}</Status>
                     <span className="acct-meta">jusqu'au {date(s.valid_until)} · dernière synchro {dateTime(s.last_sync_at)}</span>
                   </div>
@@ -86,9 +87,9 @@ export default function Banks() {
               );
             })}
           </div>
-        ) : <div className="empty">{sessions.loading ? "Chargement…" : "Aucune banque connectée."}</div>}
+        ) : sessions.loading ? <LoadingState /> : <div className="empty">Aucune banque connectée.</div>}
         {!!replaced.length && (
-          <details style={{ marginTop: 12 }}>
+          <details className="mt-12">
             <summary className="acct-meta">{replaced.length} ancienne(s) session(s) remplacée(s)</summary>
             <ul className="acct-meta">
               {replaced.map((s) => <li key={s.session_id}>{s.bank} — créée le {date(s.created_at)}, valable jusqu'au {date(s.valid_until)}</li>)}
@@ -101,7 +102,7 @@ export default function Banks() {
         <AddBank persons={persons.data ?? []} busy={busy} onStart={(bank, holders) => go("add", () => api.bankAuth(bank, holders))} />
         <div className="card">
           <h2>À savoir</h2>
-          <p className="explain" style={{ marginTop: 0 }}>
+          <p className="explain mt-0">
             L'application Enable Banking est en <b>mode restreint</b> (gratuit, limité à nos propres comptes) :
             seuls les comptes déclarés dans le portail Enable Banking (<b>« Link accounts »</b>) sont renvoyés.
             Un compte absent après connexion : le lier dans le portail, puis « Renouveler ».
@@ -137,7 +138,7 @@ function AddBank({ persons, busy, onStart }: {
   return (
     <div className="card">
       <h2>Ajouter une banque</h2>
-      {banks.error ? <div className="err" style={{ padding: 0, textAlign: "left" }}>Liste des banques indisponible ({banks.error}).</div> : (
+      {banks.error ? <div className="err p-0 ta-left">Liste des banques indisponible ({banks.error}).</div> : (
         <div className="stack">
           <input type="search" placeholder="Rechercher une banque (ex. Crédit Mutuel)" value={q} onChange={(e) => setQ(e.target.value)} />
           <select size={6} value={bank} onChange={(e) => setBank(e.target.value)} aria-label="Banque">
@@ -146,10 +147,10 @@ function AddBank({ persons, busy, onStart }: {
           </select>
           {picked && <div className="acct-meta">Consentement maximal chez cette banque : {picked.max_days} jours.</div>}
           <div>
-            <div className="acct-meta" style={{ marginBottom: 6 }}>Titulaire(s) des comptes (compte joint : cocher les deux)</div>
-            <div className="toolbar" style={{ marginBottom: 0 }}>
+            <div className="acct-meta mb-6">Titulaire(s) des comptes (compte joint : cocher les deux)</div>
+            <div className="toolbar mb-0">
               {persons.map((p) => (
-                <label key={p.id} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                <label key={p.id} className="inline-check">
                   <input type="checkbox" checked={holders.includes(p.id)} onChange={() => toggle(p.id)} />{p.name}
                 </label>
               ))}

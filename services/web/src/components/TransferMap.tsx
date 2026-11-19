@@ -76,7 +76,7 @@ export default function TransferMap({ data }: { data: Transfers }) {
     <>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
         aria-label="Carte des virements entre comptes : comptes suivis au centre, contreparties non suivies autour"
-        style={{ maxHeight: 620 }}>
+        className="flow-svg">
         <defs>
           {Object.entries(COLORS).map(([k, c]) => (
             <marker key={k} id={`arrow-${k}`} viewBox="0 0 11 11" refX="9" refY="5.5" markerWidth="11" markerHeight="11"
@@ -104,9 +104,9 @@ export default function TransferMap({ data }: { data: Transfers }) {
                 strokeDasharray={k === "transfer" ? undefined : "5 4"} markerEnd={`url(#arrow-${k})`} />
               {/* halo dessiné à part : paint-order n'est pas géré partout */}
               <text x={mid.x} y={mid.y} textAnchor="middle" dominantBaseline="middle" fontSize={11.5}
-                fill="var(--surface)" stroke="var(--surface)" strokeWidth={4} strokeLinejoin="round">{money0(e.monthly)}</text>
+                fill="var(--bg-base)" stroke="var(--bg-base)" strokeWidth={4} strokeLinejoin="round">{money0(e.monthly)}</text>
               <text x={mid.x} y={mid.y} textAnchor="middle" dominantBaseline="middle" fontSize={11.5} fontWeight={600}
-                fill="var(--text)">{money0(e.monthly)}</text>
+                fill="var(--ink)">{money0(e.monthly)}</text>
             </g>
           );
         })}
@@ -119,13 +119,13 @@ export default function TransferMap({ data }: { data: Transfers }) {
           const linked = !hover || hover === n.key || edges.some((e) => (e.source === hover && e.target === n.key) || (e.target === hover && e.source === n.key));
           return (
             <g key={n.key} opacity={linked ? 1 : 0.25} onMouseEnter={() => setHover(n.key)} onMouseLeave={() => setHover(null)}
-              style={{ cursor: "default" }}>
+              className="cur-d">
               <title>{n.kind === "account" ? `${pretty(n.name)}${n.institution ? ` · ${n.institution}` : ""}` : `${pretty(n.name)} (compte non suivi, identifié par le libellé des virements)`}</title>
               <rect x={p.x - w / 2} y={p.y - h / 2} width={w} height={h} rx={9}
-                fill={acct ? "var(--accent-soft)" : "var(--surface)"} stroke={acct ? "var(--accent)" : "var(--muted)"}
+                fill={acct ? "var(--track)" : "var(--glass-solid)"} stroke={acct ? "var(--ink)" : "var(--muted)"}
                 strokeWidth={acct ? 1.5 : 1} strokeDasharray={acct ? undefined : "4 3"} />
               <text x={p.x} y={acct ? p.y - 5 : p.y} textAnchor="middle" dominantBaseline="middle" fontSize={acct ? 11.5 : 11}
-                fontWeight={acct ? 600 : 400} fill="var(--text)">{clip(label(n), acct ? 22 : 20)}</text>
+                fontWeight={acct ? 600 : 400} fill="var(--ink)">{clip(label(n), acct ? 22 : 20)}</text>
               {acct && <text x={p.x} y={p.y + 10} textAnchor="middle" dominantBaseline="middle" fontSize={10.5} fill="var(--muted)">
                 {n.institution ? clip(n.institution, 24) : ""}</text>}
             </g>
@@ -133,15 +133,15 @@ export default function TransferMap({ data }: { data: Transfers }) {
         })}
       </svg>
 
-      <div className="chips" style={{ marginTop: 8 }}>
-        <span className="chip"><span style={{ color: COLORS.transfer }}>━</span> entre comptes suivis</span>
-        <span className="chip"><span style={{ color: COLORS.in }}>╍</span> reçu d'un compte non suivi</span>
-        <span className="chip"><span style={{ color: COLORS.out }}>╍</span> envoyé vers un compte non suivi</span>
+      <div className="chips mt-8">
+        <span className="chip"><span className="lg-transfer">━</span> entre comptes suivis</span>
+        <span className="chip"><span className="lg-in">╍</span> reçu d'un compte non suivi</span>
+        <span className="chip"><span className="lg-out">╍</span> envoyé vers un compte non suivi</span>
       </div>
 
-      <div className="table-wrap" style={{ marginTop: 12 }}>
+      <div className="table-wrap mt-12">
         <table>
-          <thead><tr><th>De</th><th>Vers</th><th style={{ textAlign: "right" }}>Par mois</th><th style={{ textAlign: "right" }}>Opérations</th><th>Dernier</th></tr></thead>
+          <thead><tr><th>De</th><th>Vers</th><th className="ta-right">Par mois</th><th className="ta-right">Opérations</th><th>Dernier</th></tr></thead>
           <tbody>
             {edges.map((e) => {
               const a = byKey.get(e.source)!, b = byKey.get(e.target)!;
@@ -149,8 +149,8 @@ export default function TransferMap({ data }: { data: Transfers }) {
               return (
                 <tr key={`${e.source}>${e.target}`}>
                   <td>{label(a)}{tag(a)}</td><td>{label(b)}{tag(b)}</td>
-                  <td style={{ textAlign: "right" }}><b>{money(e.monthly)}</b></td>
-                  <td style={{ textAlign: "right" }}>{e.count}</td><td>{shortDate(e.last)}</td>
+                  <td className="ta-right"><b>{money(e.monthly)}</b></td>
+                  <td className="ta-right">{e.count}</td><td>{shortDate(e.last)}</td>
                 </tr>
               );
             })}

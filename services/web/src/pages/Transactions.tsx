@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useFetch } from "../useFetch";
 import TxTable from "../components/TxTable";
 import { usePerson } from "../person";
+import { ErrorState, LoadingState, Segmented } from "../components/ui";
 
 const PAGE = 50;
 
@@ -50,7 +51,7 @@ export default function Transactions() {
       </div>
       <div className="card">
         <div className="toolbar">
-          <input type="search" placeholder="Rechercher un libellé (ex. CB CARREFOUR)" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input type="search" aria-label="Rechercher une opération" placeholder="Rechercher un libellé (ex. CB CARREFOUR)" value={q} onChange={(e) => setQ(e.target.value)} />
           <select value={account_id} onChange={(e) => set("account_id", e.target.value)}>
             <option value="">Tous les comptes</option>
             {accounts.data?.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -59,18 +60,15 @@ export default function Transactions() {
             <option value="">Toutes catégories</option>
             {categories.data?.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
           </select>
-          <div className="seg">
-            {[["", "Tout"], ["in", "Entrées"], ["out", "Sorties"]].map(([v, l]) => (
-              <button key={v} className={direction === v ? "on" : ""} onClick={() => set("direction", v)}>{l}</button>
-            ))}
-          </div>
+          <Segmented label="Sens des opérations" value={direction} onChange={(v) => set("direction", v)}
+            options={[{ value: "", label: "Tout" }, { value: "in", label: "Entrées" }, { value: "out", label: "Sorties" }]} />
         </div>
-        {tx.error ? <div className="err">{tx.error}</div> : tx.data ? <TxTable items={tx.data.items} categories={categories.data ?? undefined}
-          onChanged={() => setReload((n) => n + 1)} /> : <div className="skeleton" />}
+        {tx.error ? <ErrorState error={tx.error} what="les transactions" onRetry={() => setReload((n) => n + 1)} /> : tx.data ? <TxTable items={tx.data.items} categories={categories.data ?? undefined}
+          onChanged={() => setReload((n) => n + 1)} /> : <LoadingState />}
         {total > PAGE && (
           <div className="pager">
             <span>{page * PAGE + 1}–{Math.min((page + 1) * PAGE, total)} sur {total}</span>
-            <span style={{ display: "flex", gap: 8 }}>
+            <span className="d-flex gap-8">
               <button disabled={page === 0} onClick={() => set("page", String(page - 1))}>← Précédent</button>
               <button disabled={(page + 1) * PAGE >= total} onClick={() => set("page", String(page + 1))}>Suivant →</button>
             </span>

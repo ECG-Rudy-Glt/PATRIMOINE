@@ -29,7 +29,7 @@ export default function Donut({ items: all, center }: { items: DonutItem[]; cent
               {items.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]} />)}
             </Pie>
             <Tooltip formatter={(v) => money(Number(v))}
-              contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8 }} />
+              contentStyle={{ background: "var(--glass-solid)", border: "1px solid var(--hairline)", borderRadius: 8 }} />
           </PieChart>
         </ResponsiveContainer>
         <div className="donut-center"><span>{center ?? "Total"}</span><b>{money0(total)}</b></div>

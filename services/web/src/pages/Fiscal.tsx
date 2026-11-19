@@ -2,8 +2,9 @@ import { useState } from "react";
 import { api, FiscalEnvelope, FiscalSummary, TaxProfile } from "../api";
 import { useFetch } from "../useFetch";
 import { usePerson } from "../person";
-import { ACCOUNT_TYPES, date, money0, pretty } from "../format";
+import { ACCOUNT_TYPES, date, money0, num as fnum, pretty } from "../format";
 import Progress from "../components/Progress";
+import { ErrorState, LoadingState } from "../components/ui";
 import Status from "../components/Status";
 
 const KINDS: Record<string, string> = { livret_a: "Livret A", ldds: "LDDS", lep: "LEP", autre: "Autre livret" };
@@ -35,9 +36,10 @@ export default function Fiscal() {
         <button className="primary" onClick={() => setEditing(true)}>Profil fiscal</button>
       </div>
 
-      {sum.error && <div className="err">{sum.error}</div>}
+      {sum.error && <ErrorState error={sum.error} what="la fiscalité" onRetry={() => location.reload()} />}
+      {sum.loading && <LoadingState />}
       {s && !!(s.warnings.length || s.unverified_rules.length) && (
-        <div className="card stack" style={{ marginBottom: 16 }}>
+        <div className="card stack mb-16">
           {s.warnings.map((w) => <div className="explain" key={w}>{w}</div>)}
           {!!s.unverified_rules.length && (
             <div className="explain">
@@ -50,7 +52,7 @@ export default function Fiscal() {
       {s && s.rules_year && (
         <>
           <Livrets s={s} onChange={refresh} />
-          <div className="grid two" style={{ margin: "16px 0" }}>
+          <div className="grid two my-16">
             <Lep s={s} />
             <Per s={s} />
           </div>
@@ -58,15 +60,15 @@ export default function Fiscal() {
         </>
       )}
 
-      <details className="card" style={{ marginTop: 16 }}>
-        <summary style={{ cursor: "pointer" }}><b>Règles appliquées {rules.data?.year ?? ""}</b> <span className="sub">mise à jour annuelle manuelle (table tax_rules)</span></summary>
-        <div className="table-wrap" style={{ marginTop: 10 }}><table>
+      <details className="card mt-16">
+        <summary className="cur-p"><b>Règles appliquées {rules.data?.year ?? ""}</b> <span className="sub">mise à jour annuelle manuelle (table tax_rules)</span></summary>
+        <div className="table-wrap mt-10"><table>
           <thead><tr><th>Règle</th><th className="num">Valeur</th><th>Source</th><th>Statut</th></tr></thead>
           <tbody>
             {rules.data?.items.map((r) => (
               <tr key={r.key}>
                 <td>{r.label}<span className="raw">{r.key}</span></td>
-                <td className="num"><b>{r.unit === "€" ? money0(r.value) : `${r.value.toLocaleString("fr-FR")} ${r.unit}`}</b></td>
+                <td className="num"><b>{r.unit === "€" ? money0(r.value) : `${fnum(r.value, 2)}\u00A0${r.unit}`}</b></td>
                 <td className="sub">{r.source}</td>
                 <td>{r.verified ? <Status level="good">Vérifiée</Status> : <Status level="warning">À vérifier</Status>}</td>
               </tr>
@@ -86,7 +88,7 @@ function Livrets({ s, onChange }: { s: FiscalSummary; onChange: () => void }) {
   return (
     <div className="card">
       <h2>Livrets réglementés <span className="sub">place restante sous les plafonds de versement</span></h2>
-      <div className="facts" style={{ marginBottom: 14 }}>
+      <div className="facts mb-14">
         {s.livrets.totals.map((t) => (
           <div className="fact" key={t.kind}>
             <div className="kpi-label">{t.label} · plafond {money0(t.ceiling)}</div>
@@ -96,7 +98,7 @@ function Livrets({ s, onChange }: { s: FiscalSummary; onChange: () => void }) {
         ))}
       </div>
       <div className="table-wrap"><table>
-        <thead><tr><th>Livret</th><th>Titulaire</th><th className="num">Solde</th><th style={{ width: "28%" }}>Remplissage</th><th className="num">Place restante</th></tr></thead>
+        <thead><tr><th>Livret</th><th>Titulaire</th><th className="num">Solde</th><th className="w-28p">Remplissage</th><th className="num">Place restante</th></tr></thead>
         <tbody>
           {s.livrets.items.map((r) => (
             <tr key={`${r.kind}-${r.person_id}`}>
@@ -113,11 +115,11 @@ function Livrets({ s, onChange }: { s: FiscalSummary; onChange: () => void }) {
           ))}
         </tbody>
       </table></div>
-      <details style={{ marginTop: 12 }}>
-        <summary className="sub" style={{ cursor: "pointer" }}>
+      <details className="mt-12">
+        <summary className="sub cur-p">
           Nature des livrets suivis ({s.livrets.accounts.length}){unclassified.length ? ` · ${unclassified.length} à préciser` : ""}
         </summary>
-        <div className="stack" style={{ marginTop: 10, gap: 6 }}>
+        <div className="stack mt-10 gap-6">
           {s.livrets.accounts.map((a) => (
             <div className="line" key={a.id}>
               <span>{pretty(a.name)} <span className="acct-meta">{a.institution ?? ""} · {money0(a.balance)}</span></span>
@@ -139,7 +141,7 @@ function Lep({ s }: { s: FiscalSummary }) {
       <h2>LEP <span className="sub">éligibilité selon le revenu fiscal de référence</span></h2>
       <div className="stack">
         {s.lep.map((r) => (
-          <div key={r.person_id} className="stack" style={{ gap: 4 }}>
+          <div key={r.person_id} className="stack gap-4">
             <div className="line">
               <b>{r.name}</b>
               {r.eligible == null ? <Status level="warning">Profil fiscal à saisir</Status>
@@ -147,7 +149,7 @@ function Lep({ s }: { s: FiscalSummary }) {
             </div>
             {r.ceiling != null && (
               <div className="acct-meta">
-                RFR {money0(r.rfr)} ({r.basis === "foyer" ? "foyer" : "individuel"}, {r.parts?.toLocaleString("fr-FR")} part(s), revenus {r.income_year})
+                RFR {money0(r.rfr)} ({r.basis === "foyer" ? "foyer" : "individuel"}, {fnum(r.parts, 2)} part(s), revenus {r.income_year})
                 · plafond {money0(r.ceiling)} · marge {money0(r.margin)}
               </div>
             )}
@@ -165,7 +167,7 @@ function Per({ s }: { s: FiscalSummary }) {
       <h2>PER <span className="sub">plafond de déduction des versements de l'année</span></h2>
       <div className="stack">
         {s.per.items.map((r) => (
-          <div key={r.person_id} className="stack" style={{ gap: 4 }}>
+          <div key={r.person_id} className="stack gap-4">
             <div className="line"><b>{r.name}</b><span className="sub">{PER_SOURCE[r.source]}</span></div>
             <div className="facts">
               <div className="fact"><div className="kpi-label">Plafond</div><b>{money0(r.ceiling)}</b></div>
@@ -198,7 +200,7 @@ function Envelopes({ s, onChange }: { s: FiscalSummary; onChange: () => void }) 
                 <td><input type="date" defaultValue={e.opened_on ?? ""} aria-label={`Date d'ouverture de ${e.name}`}
                   max={new Date().toISOString().slice(0, 10)}
                   onBlur={(ev) => ev.target.value !== (e.opened_on ?? "") && setOpened(e, ev.target.value)} /></td>
-                <td className="num">{e.years != null ? `${e.years.toLocaleString("fr-FR")} ans` : "—"}</td>
+                <td className="num">{e.years != null ? `${fnum(e.years, 1)} ans` : "—"}</td>
                 <td>{!e.threshold_years ? <span className="sub">pas de seuil (blocage jusqu'à la retraite)</span>
                   : !e.opened_on ? <Status level="warning">Date d'ouverture à saisir</Status>
                   : e.reached ? <Status level="good">{e.threshold_years} ans atteints le {date(e.threshold_date)}</Status>
@@ -237,12 +239,12 @@ function ProfileForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
     <>
       <div className="drawer-backdrop" onClick={onClose} />
       <aside className="drawer" role="dialog" aria-label="Profil fiscal">
-        <div className="line"><h1 style={{ fontSize: 20 }}>Profil fiscal</h1>
+        <div className="line"><h1 className="fs-20">Profil fiscal</h1>
           <button className="ghost" onClick={onClose} aria-label="Fermer">✕</button></div>
         <p className="explain">Recopie les montants de l'avis d'imposition. Le plafond PER {new Date().getFullYear()} se calcule sur les revenus {new Date().getFullYear() - 1}.</p>
 
         {field("Année des revenus (avis reçu l'année suivante)", cur.income_year, (v) => set({ income_year: num(v) }))}
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <label className="d-flex gap-8 ai-center">
           <input type="checkbox" checked={cur.joint} onChange={(e) => set({ joint: e.target.checked })} />
           Déclaration commune (mariés ou pacsés)
         </label>
@@ -254,7 +256,7 @@ function ProfileForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
         )}
 
         {cur.persons.map((x) => (
-          <div className="stack" key={x.person_id} style={{ gap: 8 }}>
+          <div className="stack gap-8" key={x.person_id}>
             <div className="group-title"><b>{x.name}</b></div>
             {!cur.joint && (
               <div className="cols-2">
@@ -271,9 +273,9 @@ function ProfileForm({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           </div>
         ))}
 
-        {err && <div className="err" style={{ padding: 0, textAlign: "left" }}>{err}</div>}
+        {err && <div className="err p-0 ta-left">{err}</div>}
         <div className="line"><span />
-          <span style={{ display: "flex", gap: 8 }}><button onClick={onClose}>Annuler</button>
+          <span className="d-flex gap-8"><button onClick={onClose}>Annuler</button>
             <button className="primary" disabled={!cur.income_year} onClick={save}>Enregistrer</button></span>
         </div>
       </aside>

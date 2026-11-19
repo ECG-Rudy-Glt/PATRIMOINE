@@ -1,7 +1,7 @@
 // Service worker Patrimoine : coque de l'interface + notifications Web Push.
-// Données bancaires jamais mises en cache : /api/*, /ha/*, l'outpost Authentik et les pages HTML passent toujours par le réseau ;
+// Données bancaires jamais mises en cache : /api/*, /ha/*, l'authentification du reverse proxy et les pages HTML passent toujours par le réseau ;
 // hors ligne, une page « Hors connexion » sans aucun chiffre. Changer CACHE purge l'ancien cache à l'activation.
-const CACHE = "patrimoine-v1";
+const CACHE = "patrimoine-v2";
 const SHELL = ["/offline.html", "/icons/icon-192.png", "/icons/icon.svg", "/manifest.webmanifest"];
 const NEVER = ["/api/", "/ha/", "/_ha", "/outpost.goauthentik.io/"];
 

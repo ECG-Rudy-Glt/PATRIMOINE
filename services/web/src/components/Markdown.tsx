@@ -24,7 +24,7 @@ export default function Markdown({ text }: { text: string }) {
     if (h) {
       const n = h[1].length;
       const Tag = (`h${Math.min(n + 1, 5)}`) as "h2" | "h3" | "h4" | "h5";
-      out.push(<Tag key={k++} style={{ margin: n === 1 ? "0 0 8px" : "18px 0 6px" }}>{inline(h[2])}</Tag>);
+      out.push(<Tag key={k++}>{inline(h[2])}</Tag>);
       i++; continue;
     }
     if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { out.push(<div key={k++} className="divider" />); i++; continue; }
@@ -46,12 +46,12 @@ export default function Markdown({ text }: { text: string }) {
       const items: string[] = [];
       while (i < lines.length && /^\s*([-*]|\d+[.)])\s+/.test(lines[i]) && /^\s*\d+[.)]\s+/.test(lines[i]) === ordered) { items.push(lines[i].replace(/^\s*([-*]|\d+[.)])\s+/, "")); i++; }
       const L = ordered ? "ol" : "ul";
-      out.push(<L key={k++} style={{ margin: "4px 0 8px", paddingLeft: 22 }}>{items.map((x, j) => <li key={j}>{inline(x)}</li>)}</L>);
+      out.push(<L key={k++}>{items.map((x, j) => <li key={j}>{inline(x)}</li>)}</L>);
       continue;
     }
     const para: string[] = [];
     while (i < lines.length && lines[i].trim() && !/^(#{1,4}\s|\s*([-*]|\d+[.)])\s+)/.test(lines[i]) && !(lines[i].includes("|") && i + 1 < lines.length && isSep(lines[i + 1]))) { para.push(lines[i]); i++; }
-    out.push(<p key={k++} style={{ margin: "6px 0" }}>{inline(para.join(" "))}</p>);
+    out.push(<p key={k++}>{inline(para.join(" "))}</p>);
   }
   return <div className="markdown">{out}</div>;
 }

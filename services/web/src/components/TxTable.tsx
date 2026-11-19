@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { api, Category, Tx } from "../api";
-import { date, merchantName, pretty, signed } from "../format";
+import { date, merchantName, pretty, signedTx } from "../format";
 import { useNarrow } from "../useNarrow";
 
 type Props = { items: Tx[]; showAccount?: boolean; categories?: Category[]; onChanged?: () => void; compact?: boolean };
@@ -74,7 +74,7 @@ export default function TxTable({ items, showAccount: showAccountProp = true, ca
               {t.category_source === "manual" && pending?.id !== t.id && <span className="manual" title="Manuelle">●</span>}
             </td>}
             {showAccount && <td className="acct-meta">{pretty(t.account)}</td>}
-            <td className={"num " + (t.amount < 0 ? "ink" : "credit")}>{signed(t.amount)}</td>
+            <td className={"num " + (t.amount < 0 ? "ink" : "credit")}>{signedTx(t.amount)}</td>
           </tr>
         ))}
       </tbody>

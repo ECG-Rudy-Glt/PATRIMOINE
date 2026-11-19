@@ -31,7 +31,7 @@ function Import() {
   const shown = preview ?? done;
 
   return (
-    <div className="card stack" style={{ gap: 14, maxWidth: 720, marginTop: 16 }}>
+    <div className="card stack gap-14 mw-720 mt-16">
       <div>
         <div className="goal-name">Importer un historique</div>
         <div className="acct-meta">
@@ -41,7 +41,7 @@ function Import() {
         </div>
       </div>
 
-      <div className="stack" style={{ gap: 10 }}>
+      <div className="stack gap-10">
         <label className="field">
           <span className="kpi-label">Compte</span>
           <select value={accountId} onChange={(e) => { setAccountId(e.target.value); reset(); }}>
@@ -60,7 +60,7 @@ function Import() {
             <option value="all">Tout le fichier, sauf les opérations déjà présentes (même date, montant et libellé)</option>
           </select>
         </label>
-        <div className="line" style={{ gap: 8 }}>
+        <div className="line gap-8">
           <button className="primary" disabled={!file || !accountId || busy} onClick={() => run(true)}>
             {busy && !preview ? "Analyse…" : "Analyser"}
           </button>
@@ -70,7 +70,7 @@ function Import() {
         </div>
       </div>
 
-      {error && <div className="err" role="alert" style={{ padding: 0, textAlign: "left" }}>{error}</div>}
+      {error && <div className="err p-0 ta-left" role="alert">{error}</div>}
 
       {done && (
         <div role="status" className="pos">
@@ -84,7 +84,7 @@ function Import() {
       )}
 
       {shown && (
-        <div className="stack" style={{ gap: 8 }}>
+        <div className="stack gap-8">
           <div className="divider" />
           <div>
             <strong>{shown.new}</strong> nouvelle{shown.new > 1 ? "s" : ""} opération{shown.new > 1 ? "s" : ""} sur {shown.read} lue{shown.read > 1 ? "s" : ""}
@@ -97,7 +97,7 @@ function Import() {
           {shown.skipped_reasons.map((r) => (
             <div key={r.code} className="acct-meta">{r.n} ignorée{r.n > 1 ? "s" : ""} : {r.label}.</div>
           ))}
-          {shown.warnings.map((w, i) => <div key={i} className="warn" style={{ fontSize: 13 }}>{w}</div>)}
+          {shown.warnings.map((w, i) => <div key={i} className="warn fs-13">{w}</div>)}
           <div className="table-wrap">
             <table>
               <thead><tr><th>Date</th><th>Libellé</th><th className="num">Montant</th><th /></tr></thead>
@@ -139,9 +139,9 @@ function MonthlyReports() {
   const month = (m: string) => new Date(`${m}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   const kb = (n: number) => `${Math.round(n / 1024)} Ko`;
   return (
-    <div className="card stack" style={{ gap: 12, maxWidth: 720, marginBottom: 16 }}>
-      <div className="line" style={{ alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
-        <div style={{ flex: "1 1 320px" }}>
+    <div className="card stack gap-12 mw-720 mb-16">
+      <div className="line ai-flex-start fw gap-12">
+        <div className="grow-320">
           <div className="goal-name">Rapport mensuel — situation financière complète</div>
           <div className="acct-meta">
             Un classeur Excel par mois : synthèse, Alex, Sam, compte commun, évolution de chaque compte (graphes par classe),
@@ -150,11 +150,11 @@ function MonthlyReports() {
         </div>
         <button className="primary" disabled={busy} onClick={generate}>{busy ? "Génération…" : "Générer maintenant"}</button>
       </div>
-      {err && <div className="err" role="alert" style={{ padding: 0, textAlign: "left" }}>{err}</div>}
+      {err && <div className="err p-0 ta-left" role="alert">{err}</div>}
       {(list.data ?? []).length ? (
-        <div className="stack" style={{ gap: 0 }}>
+        <div className="stack gap-0">
           {(list.data ?? []).map((r) => (
-            <div className="line" key={r.month} style={{ padding: "10px 0", borderTop: "1px solid var(--border)" }}>
+            <div className="line divrow" key={r.month}>
               <span>{month(r.month)} <span className="acct-meta">· généré {ago(r.created_at)} · {kb(r.size_bytes)}</span></span>
               <a href={`/api/reports/${r.month}/download`}><button>Télécharger</button></a>
             </div>
@@ -171,7 +171,7 @@ function HomeAssistant() {
   if (!d || (!d.configured && !d.url)) return null;
   const stale = !d.last_push || Date.now() - new Date(d.last_push).getTime() > 3600_000;
   return (
-    <div className="card stack" style={{ gap: 8, maxWidth: 720, marginTop: 16 }}>
+    <div className="card stack gap-8 mw-720 mt-16">
       <div className="goal-name">Home Assistant</div>
       {d.configured ? (
         <div className={stale ? "warn" : "pos"} role="status">
@@ -204,24 +204,24 @@ export default function Export() {
 
       <MonthlyReports />
 
-      <div className="card stack" style={{ gap: 16, maxWidth: 720 }}>
+      <div className="card stack gap-16 mw-720">
         <div>
           <div className="kpi-label">Période</div>
-          <div className="seg" role="radiogroup" aria-label="Période exportée" style={{ marginTop: 6 }}>
+          <div className="seg mt-6" role="radiogroup" aria-label="Période exportée">
             {PERIODS.map((p) => (
               <button key={p.m} role="radio" aria-checked={months === p.m} className={months === p.m ? "on" : ""}
                 onClick={() => setMonths(p.m)}>{p.label}</button>
             ))}
           </div>
-          <div className="acct-meta" style={{ marginTop: 6 }}>
+          <div className="acct-meta mt-6">
             L'historique réellement disponible dépend des comptes (par exemple, un compte récent ou une banque qui limite la profondeur).
           </div>
         </div>
 
         <div className="divider" />
 
-        <div className="line" style={{ gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 320px" }}>
+        <div className="line gap-12 ai-flex-start fw">
+          <div className="grow-320">
             <div className="goal-name">Excel avec graphiques (.xlsx)</div>
             <div className="acct-meta">
               Un résumé avec des graphiques déjà construits (entrées et sorties, solde du mois, patrimoine, postes de dépenses),
@@ -231,8 +231,8 @@ export default function Export() {
           <button className="primary" onClick={() => { window.location.href = url("xlsx"); }}>Télécharger l'Excel</button>
         </div>
 
-        <div className="line" style={{ gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 320px" }}>
+        <div className="line gap-12 ai-flex-start fw">
+          <div className="grow-320">
             <div className="goal-name">Fichiers CSV (.zip)</div>
             <div className="acct-meta">
               Les mêmes données en CSV (séparateur « ; », virgule décimale, UTF-8) : s'ouvrent directement dans Excel ou LibreOffice.

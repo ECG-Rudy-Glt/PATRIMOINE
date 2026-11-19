@@ -21,7 +21,7 @@ export default function Partage() {
       <h2>Qui doit quoi à qui <span className="sub">dépenses partagées et compte commun</span></h2>
       {s ? (
         <>
-          <div className="big" style={{ fontSize: 24, marginBottom: 6 }}>{s.phrase}</div>
+          <div className="big fs-24 mb-6">{s.phrase}</div>
           {s.lignes.map((l, i) => (
             <div className="avoid-row" key={i}>
               <div className="avoid-main">
@@ -31,13 +31,13 @@ export default function Partage() {
               <div className="avoid-num"><b className={l.effet >= 0 ? "pos" : "neg"}>{signed(l.effet)}</b><span className="acct-meta">{money(l.montant)}</span></div>
             </div>
           ))}
-          <div className="acct-meta" style={{ marginTop: 6 }}>Un solde positif signifie que {s.b} doit à {s.a} ; négatif, l'inverse. {s.note}</div>
+          <div className="acct-meta mt-6">Un solde positif signifie que {s.b} doit à {s.a} ; négatif, l'inverse. {s.note}</div>
         </>
-      ) : <div className="skeleton" style={{ width: "50%" }} />}
+      ) : <div className="skeleton w-50p" />}
       {!!cands.length && (
         <>
           <div className="section-title">À confirmer ({cands.length})</div>
-          <div className="acct-meta" style={{ marginBottom: 6 }}>
+          <div className="acct-meta mb-6">
             Opérations qui ressemblent à une dépense partagée (voyage, billetterie) ou à un remboursement entre vous. Rien n'est compté tant que vous n'avez pas confirmé.
           </div>
           {cands.map((c) => (
@@ -61,7 +61,7 @@ export default function Partage() {
         <>
           <div className="section-title">Déjà classées</div>
           {(sh.data?.items ?? []).map((c) => (
-            <div className="line" key={c.tx_id} style={{ padding: "6px 0", borderTop: "1px solid var(--border)" }}>
+            <div className="line divrow tight" key={c.tx_id}>
               <span>{date(c.booked_on)} · {c.label} <span className="acct-meta">· {c.kind === "depense" ? "dépense du foyer" : "remboursement"}</span></span>
               <button className="ghost" disabled={busy === c.tx_id} onClick={() => act(c.tx_id, null)}>Retirer</button>
             </div>

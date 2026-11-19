@@ -1,0 +1,109 @@
+/* =========================================================================================================
+   Tokens du design system Patrimoine : thème « Perle » (clair, défaut) et thème sombre « Graphite ».
+   Un seul bloc par thème : theme.ts pose toujours data-theme="light|dark" (le mode « auto » est résolu en JS,
+   public/theme-init.js évite le flash au chargement). Les couleurs de barre système (theme-color) viennent
+   de src/theme-colors.json, lu aussi par vite.config.ts pour index.html, le manifeste et offline.html.
+   ========================================================================================================= */
+:root {
+  /* typographie */
+  --font: "Geist Variable", "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-xs: 12px; --fs-sm: 13px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 22px; --fs-2xl: 30px;
+  --fs-hero: clamp(44px, 13vw, 60px);
+  /* espacements */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px;
+  /* rayons */
+  --r-sm: 12px; --r-md: 18px; --r-lg: 24px; --r-pill: 999px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --tap: 44px;
+  --nav-h: 66px;
+
+  /* thème Perle (clair) */
+  color-scheme: light;
+  --bg-base: #F2F3F8;
+  --bg-image:
+    radial-gradient(520px 420px at 12% 0%, rgba(255, 255, 255, .95), transparent 70%),
+    radial-gradient(480px 480px at 100% 28%, rgba(214, 228, 246, .5), transparent 72%),
+    radial-gradient(520px 440px at 0% 62%, rgba(246, 222, 236, .45), transparent 72%),
+    radial-gradient(480px 480px at 100% 95%, rgba(220, 242, 232, .45), transparent 72%);
+  --ink: #0E1118; --ink-2: #3F475A; --muted: #5E687D;
+  --hairline: rgba(14, 17, 24, .09); --hairline-strong: rgba(14, 17, 24, .18);
+  --track: rgba(14, 17, 24, .10);
+
+  --glass-bg: linear-gradient(160deg, rgba(255, 255, 255, .62), rgba(255, 255, 255, .24));
+  --glass-solid: rgba(255, 255, 255, .86);
+  --glass-border: rgba(255, 255, 255, .85);
+  --glass-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .4),
+    inset 1.5px 0 0 rgba(255, 255, 255, .5), inset -1px 0 0 rgba(255, 255, 255, .3), 0 10px 28px rgba(70, 80, 130, .14);
+  --glass-sheen: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .5) 46%, transparent 60%);
+  --glass-filter: blur(22px) saturate(190%);
+  --nav-bg: linear-gradient(160deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, .34));
+  --nav-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .4), 0 14px 32px rgba(70, 80, 130, .24);
+  --nav-on-bg: linear-gradient(160deg, #fff, #e9edf6);
+  --nav-on-ink: #0E1118;
+  --nav-on-shadow: inset 0 1.5px 0 #fff, 0 6px 16px rgba(70, 80, 130, .28);
+
+  /* boutons et pastilles actives : noir métallisé */
+  --btn-bg: linear-gradient(180deg, #2a2f3c, #0b0e14);
+  --btn-ink: #fff;
+  --btn-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 -2px 6px rgba(0, 0, 0, .45), 0 6px 14px rgba(20, 24, 40, .28);
+  --bar-bg: linear-gradient(180deg, #2a2f3c, #0b0e14);
+  --bar-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .28), inset 0 -2px 6px rgba(0, 0, 0, .5), 0 12px 26px rgba(20, 24, 40, .35);
+  --plus-bg: linear-gradient(180deg, #fff, #e6eaf3);
+  --plus-ink: #0E1118;
+
+  /* sémantique sobre */
+  --good: #18794E; --warning: #9A6A12; --serious: #B0502B; --critical: #B3261E;
+  --pos: #18794E; --neg: #B0502B; --warn: #9A6A12;
+  --focus: #0E1118;
+  --overlay: rgba(20, 24, 40, .38);
+  --card-fallback: rgba(255, 255, 255, .86);
+
+  /* séries de graphiques (ordre fixe) */
+  --series-1: #2F3B57; --series-2: #B0502B; --series-3: #18794E; --series-4: #C28A1E;
+  --series-5: #8A5A8C; --series-6: #3C7D8C; --series-7: #6A6FB0; --series-8: #98A1B3;
+  --bar-ghost: rgba(14, 17, 24, .14);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-base: #12141B;
+  --bg-image:
+    radial-gradient(560px 420px at 100% 4%, rgba(190, 120, 96, .26), transparent 64%),
+    radial-gradient(520px 440px at 0% 0%, rgba(120, 104, 200, .3), transparent 62%),
+    radial-gradient(520px 520px at 50% 110%, rgba(60, 90, 120, .22), transparent 70%);
+  --ink: #F2F3F7; --ink-2: #C9CDDA; --muted: #A3ABBD;
+  --hairline: rgba(255, 255, 255, .11); --hairline-strong: rgba(255, 255, 255, .22);
+  --track: rgba(255, 255, 255, .13);
+
+  --glass-bg: linear-gradient(160deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .035));
+  --glass-solid: rgba(30, 32, 44, .92);
+  --glass-border: rgba(255, 255, 255, .14);
+  --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -1px 0 rgba(255, 255, 255, .04), 0 10px 28px rgba(0, 0, 0, .35);
+  --glass-sheen: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .07) 46%, transparent 60%);
+  --glass-filter: blur(22px) saturate(150%);
+  --nav-bg: linear-gradient(160deg, rgba(40, 42, 58, .78), rgba(24, 26, 38, .72));
+  --nav-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 14px 32px rgba(0, 0, 0, .5);
+  --nav-on-bg: linear-gradient(160deg, #fff, #d5dae8);
+  --nav-on-ink: #12141B;
+  --nav-on-shadow: inset 0 1.5px 0 #fff, 0 6px 16px rgba(0, 0, 0, .45);
+
+  --btn-bg: linear-gradient(180deg, #f6f7fb, #cfd5e4);
+  --btn-ink: #12141B;
+  --btn-shadow: inset 0 1px 0 #fff, inset 0 -2px 6px rgba(20, 24, 40, .18), 0 6px 14px rgba(0, 0, 0, .4);
+  --bar-bg: linear-gradient(160deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .05));
+  --bar-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 12px 26px rgba(0, 0, 0, .45);
+  --plus-bg: linear-gradient(180deg, #fff, #d9deea);
+  --plus-ink: #12141B;
+
+  --good: #7BE0A6; --warning: #E8B64F; --serious: #F2A07F; --critical: #FF8A80;
+  --pos: #7BE0A6; --neg: #F2A07F; --warn: #E8B64F;
+  --focus: #F2F3F7;
+  --overlay: rgba(0, 0, 0, .55);
+  --card-fallback: rgba(30, 32, 44, .94);
+
+  --series-1: #9FB0D6; --series-2: #F2A07F; --series-3: #7BE0A6; --series-4: #E8B64F;
+  --series-5: #C79BD0; --series-6: #7CC4D4; --series-7: #A9ADEA; --series-8: #7D8599;
+  --bar-ghost: rgba(255, 255, 255, .2);
+}
+
