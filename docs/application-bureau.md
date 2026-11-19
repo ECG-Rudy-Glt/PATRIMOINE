@@ -1,6 +1,6 @@
 # Application de bureau
 
-Une fenêtre dédiée pour Patrimoine sur Windows, macOS et Linux. Elle se connecte à **votre** serveur Patrimoine (voir [installation](installation.md)) : il faut donc qu'il soit joignable depuis l'ordinateur (réseau local, VPN ou reverse proxy avec authentification).
+Une fenêtre dédiée pour Patrimoine sur Windows et Linux (pas de version macOS pour l'instant). Elle se connecte à **votre** serveur Patrimoine (voir [installation](installation.md)) : il faut donc qu'il soit joignable depuis l'ordinateur (réseau local, VPN ou reverse proxy avec authentification).
 
 ## Télécharger
 
@@ -9,7 +9,6 @@ Les installateurs sont publiés dans les [Releases GitHub](https://github.com/EC
 | Système | Fichier |
 |---|---|
 | Windows | `.msi` ou `…-setup.exe` (installateur NSIS) |
-| macOS | `.dmg` (Apple Silicon : `aarch64`, Intel : `x64`) |
 | Linux | `.AppImage` ou `.deb` |
 
 ## Vérifier l'intégrité (sommes SHA-256)
@@ -34,9 +33,6 @@ Les installateurs ne sont **pas signés** par défaut : une signature de code co
 
 Pour continuer, après avoir vérifié la somme SHA-256 ci-dessus : **Informations complémentaires**, puis **Exécuter quand même**. Le code source est public et l'installateur est construit par GitHub Actions à partir de ce dépôt. Si vous préférez, [compilez-le vous-même](../desktop/README.md).
 
-## macOS (Gatekeeper)
-
-Sans signature Apple, macOS peut refuser d'ouvrir l'application (« développeur non identifié »). Glissez l'application dans *Applications*, puis clic droit sur l'icône, **Ouvrir**, et confirmez. En cas d'échec : réglages système > Confidentialité et sécurité > **Ouvrir quand même**.
 
 ## Linux
 
@@ -57,4 +53,4 @@ Limites : pas de mode hors ligne, pas de notifications de bureau, et les liens v
 
 ## Désinstaller
 
-Windows : *Paramètres > Applications*. macOS : supprimez l'application. Linux : supprimez l'AppImage ou `sudo apt remove patrimoine`. La seule donnée locale est l'adresse du serveur (voir [desktop/README.md](../desktop/README.md)).
+Windows : *Paramètres > Applications*. Linux : supprimez l'AppImage ou `sudo apt remove patrimoine`. La seule donnée locale est l'adresse du serveur (voir [desktop/README.md](../desktop/README.md)).

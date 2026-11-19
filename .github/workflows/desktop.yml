@@ -1,6 +1,6 @@
 name: Application de bureau
 
-# Construit l'application de bureau (desktop/) : Windows (msi + exe NSIS), macOS (dmg), Linux (AppImage + deb).
+# Construit l'application de bureau (desktop/) : Windows (msi + exe NSIS) et Linux (AppImage + deb). macOS : non fourni.
 # Déclenchement : tag `desktop-v*` (publie une Release GitHub avec les sommes SHA-256) ou lancement manuel
 # (construit les installateurs et les garde en artefacts ; case « publier » pour créer la Release).
 # Sans signature par défaut. Signature optionnelle si les secrets sont définis : voir desktop/README.md.
@@ -36,8 +36,6 @@ jobs:
       matrix:
         include:
           - { name: Windows, os: windows-2022, bundles: "msi,nsis", target: "" }
-          - { name: macOS (Apple Silicon), os: macos-14, bundles: "dmg", target: "aarch64-apple-darwin" }
-          - { name: macOS (Intel), os: macos-14, bundles: "dmg", target: "x86_64-apple-darwin" }
           - { name: Linux, os: ubuntu-22.04, bundles: "appimage,deb", target: "" }
     steps:
       - uses: actions/checkout@v4.2.2
